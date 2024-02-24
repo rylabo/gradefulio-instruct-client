@@ -1,0 +1,41 @@
+{
+  // "workbench.iconTheme": "material-icon-theme",
+  "workbench.iconTheme": "vscode-icons",
+  "material-icon-theme.activeIconPack": "nest",
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "vsicons.presets.foldersAllDefaultIcon": false,
+  "vsicons.presets.hideExplorerArrows": false,
+  "vsicons.presets.hideFolders": false,
+  "vsicons.projectDetection.autoReload": true,
+  "material-icon-theme.files.associations": {
+    "*.controller.ts": "nest",
+    "*.repository.ts": "database"
+  },
+  "vsicons.presets.nestjs": true,
+  "vsicons.associations.files": [
+    {
+      "icon": "mongo",
+      "extensions": ["repository.ts", "model.ts"],
+      "format": "FileFormat.svg",
+    },
+    {
+      "icon": "jest",
+      "extensions": ["jest-e2e.json"],
+      "format": "FileFormat.svg",
+      "filenamesGlob": [
+        "jest.config",
+        "jest.config.base",
+        "jest.config.common",
+        "jest.config.babel",
+      ],
+      "extensionsGlob": ["js", "cjs", "mjs"],
+      "filename": true,
+    },
+    {
+      "icon": "config",
+      "extensions": ["env", "properties", "dotenv"],
+      "format": "FileFormat.svg",
+    },
+  ],
+  "material-icon-theme.folders.theme": "specific"
+}
