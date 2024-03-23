@@ -1,10 +1,10 @@
 'use client';
-import React, { use, useLayoutEffect, useState, DragEvent } from 'react'
+import React, { use, useLayoutEffect, useState, DragEvent, ChangeEvent } from 'react'
 import Seat, { SeatSpec } from './_Seat'
 import { StudentObj } from '../../../lib/StudentObj';
 import SeatingPlanBlueprint, { GridSpec } from './SeatingPlanBlueprint';
 import SeatingGridSettings from './SeatingGridSettings';
-import { Tab, Tabs } from '@nextui-org/react';
+import { Input, Tab, Tabs } from '@nextui-org/react';
 import DeskPlan from './DeskPlan';
 
 function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
@@ -479,6 +479,7 @@ const Setup = () => {
     )
   })
   const desksJson: string = JSON.stringify(deskSlots, null, 2)
+  const [readText, setReadText] =  useState<string | null | undefined>('file contents initialized');
 
   function studentDragStartHandler(event: DragEvent) {
     
@@ -545,13 +546,34 @@ const Setup = () => {
     }
   }
 
+  function fileSelectHandler(event: ChangeEvent<HTMLInputElement> ) {
+    console.log(event);
+    const selectedFile = event.target.files?.item(0)
+    const fr = new FileReader()
+    fr.addEventListener('load', (event) => {
+      if (event.target?.result instanceof ArrayBuffer){
+        setReadText(new TextDecoder().decode(event.target?.result));
+      }
+      else {
+        setReadText(event.target?.result);
+      }
+        
+    })
+    if (selectedFile)
+      fr.readAsText(selectedFile)
+  }
+
   return (
     <Tabs>
       <Tab key='Homeroom Details' title='Homeroom Details'>
 
       </Tab>
       <Tab key='Student List' title='Student List'>
-
+        <Input type='file' accept='.txt' onChange={fileSelectHandler}/>
+        <div>
+          <p>File contents</p>
+          <p>{readText}</p>
+        </div>
       </Tab>
       <Tab key='Seating Grid' title='Seating Grid' className='desk-planner grid gap-10 grid-cols-2'>
         <div className={`desk-plan grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
