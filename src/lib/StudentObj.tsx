@@ -9,7 +9,7 @@ type Name = {
 
 export type StudentObj = {
   '@type': [string];
-  attendanceNumber: string;
+  attendanceNumber?: string;
   familyNames: [Name];
   givenNames: [Name];
   status?: string;

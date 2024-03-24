@@ -24,6 +24,7 @@ function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
 }
 import DeskSlot, { DeskSlotProps } from './DeskSlot';
 import SeatingPlan from './SeatingPlan';
+import { read, utils } from 'xlsx';
 
 const Setup = () => {
   const [studentList, setStudentList] = useState<StudentObj[]>([
@@ -479,7 +480,7 @@ const Setup = () => {
     )
   })
   const desksJson: string = JSON.stringify(deskSlots, null, 2)
-  const [readText, setReadText] =  useState<string | null | undefined>('file contents initialized');
+  const [enteredStudents, setEnteredStudents] =  useState<string | null | undefined>('file contents initialized');
 
   function studentDragStartHandler(event: DragEvent) {
     
@@ -546,21 +547,47 @@ const Setup = () => {
     }
   }
 
-  function fileSelectHandler(event: ChangeEvent<HTMLInputElement> ) {
+  interface StudentListItem {
+    '苗字': string,
+    '名前': string,
+    '苗字（かたかな）': string,
+    '名前（かたかな）': string,
+    '苗字（ローマ字）': string,
+    '名前（ローマ字）': string,
+  }
+
+  async function fileSelectHandler(event: ChangeEvent<HTMLInputElement> ) {
     console.log(event);
-    const selectedFile = event.target.files?.item(0)
-    const fr = new FileReader()
-    fr.addEventListener('load', (event) => {
-      if (event.target?.result instanceof ArrayBuffer){
-        setReadText(new TextDecoder().decode(event.target?.result));
+    const selectedFile: ArrayBuffer | undefined = await event.target.files?.item(0)?.arrayBuffer()
+    const wb = read(selectedFile)
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const data: StudentListItem[] = utils.sheet_to_json<StudentListItem>(ws)
+    const spreadsheetStudentList = data.map((item: StudentListItem) => {
+      return {
+        "@type": [
+          "Student"
+        ],
+        "givenNames": [
+          {
+            "annotation": item['名前（かたかな）'],
+            "nameToken": {
+              "en": item['名前（ローマ字）'],
+              "ja": item.名前
+            }
+          }
+        ],
+        "familyNames": [
+          {
+            "annotation": item['苗字（かたかな）'],
+            "nameToken": {
+              "en": item['苗字（ローマ字）'],
+              "ja": item.苗字
+            }
+          }
+        ],
       }
-      else {
-        setReadText(event.target?.result);
-      }
-        
     })
-    if (selectedFile)
-      fr.readAsText(selectedFile)
+    setEnteredStudents(JSON.stringify(spreadsheetStudentList))
   }
 
   return (
@@ -569,10 +596,10 @@ const Setup = () => {
 
       </Tab>
       <Tab key='Student List' title='Student List'>
-        <Input type='file' accept='.txt' onChange={fileSelectHandler}/>
+        <Input type='file' accept='.xls, .xlsx, .csv' onChange={fileSelectHandler}/>
         <div>
           <p>File contents</p>
-          <p>{readText}</p>
+          <p>{enteredStudents}</p>
         </div>
       </Tab>
       <Tab key='Seating Grid' title='Seating Grid' className='desk-planner grid gap-10 grid-cols-2'>
