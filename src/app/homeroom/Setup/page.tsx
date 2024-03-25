@@ -1,11 +1,14 @@
 'use client';
-import React, { use, useLayoutEffect, useState, DragEvent, ChangeEvent } from 'react'
+import React, { use, useLayoutEffect, useState, DragEvent, ChangeEvent, useReducer } from 'react'
 import Seat, { SeatSpec } from './_Seat'
 import { StudentObj } from '../../../lib/StudentObj';
 import SeatingPlanBlueprint, { GridSpec } from './SeatingPlanBlueprint';
 import SeatingGridSettings from './SeatingGridSettings';
 import { Input, Tab, Tabs } from '@nextui-org/react';
 import DeskPlan from './DeskPlan';
+import DeskSlot, { DeskSlotProps } from './DeskSlot';
+import SeatingPlan from './SeatingPlan';
+import { read, utils } from 'xlsx';
 
 function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
   let spec: GridSpec = {rows: 2, columns: 3};
@@ -22,9 +25,31 @@ function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
 
   return spec
 }
-import DeskSlot, { DeskSlotProps } from './DeskSlot';
-import SeatingPlan from './SeatingPlan';
-import { read, utils } from 'xlsx';
+interface NewStudentListItem {
+  '姓': string
+  '名': string
+  '姓（かたかな）': string
+  '名（かたかな）': string
+  '姓（ローマ字）': string
+  '名（ローマ字）': string
+}
+
+interface ConfigState {
+  newStudents: StudentObj[]
+}
+
+type ConfigAction =
+  | {type: 'add_students_from_spreadsheet'; newStudents: StudentObj[]}
+
+const reducer = (state: ConfigState, action: ConfigAction): ConfigState => {
+  switch (action.type) {
+    case 'add_students_from_spreadsheet':
+      return {
+        ...state,
+        newStudents: action.newStudents
+      }
+  }
+}
 
 const Setup = () => {
   const [studentList, setStudentList] = useState<StudentObj[]>([
@@ -481,6 +506,7 @@ const Setup = () => {
   })
   const desksJson: string = JSON.stringify(deskSlots, null, 2)
   const [enteredStudents, setEnteredStudents] =  useState<string | null | undefined>('file contents initialized');
+  const [configState, dispatch] = useReducer<(state: ConfigState, action: ConfigAction) => ConfigState>(reducer, {newStudents: []})
 
   function studentDragStartHandler(event: DragEvent) {
     
@@ -547,47 +573,39 @@ const Setup = () => {
     }
   }
 
-  interface StudentListItem {
-    '苗字': string,
-    '名前': string,
-    '苗字（かたかな）': string,
-    '名前（かたかな）': string,
-    '苗字（ローマ字）': string,
-    '名前（ローマ字）': string,
-  }
-
   async function fileSelectHandler(event: ChangeEvent<HTMLInputElement> ) {
     console.log(event);
     const selectedFile: ArrayBuffer | undefined = await event.target.files?.item(0)?.arrayBuffer()
+    // todo enclose in try
     const wb = read(selectedFile)
     const ws = wb.Sheets[wb.SheetNames[0]]
-    const data: StudentListItem[] = utils.sheet_to_json<StudentListItem>(ws)
-    const spreadsheetStudentList = data.map((item: StudentListItem) => {
+    const data: NewStudentListItem[] = utils.sheet_to_json<NewStudentListItem>(ws)
+    const spreadsheetStudentList: StudentObj[] = data.map((item: NewStudentListItem) => {
       return {
         "@type": [
           "Student"
         ],
         "givenNames": [
           {
-            "annotation": item['名前（かたかな）'],
+            "annotation": item['名（かたかな）'],
             "nameToken": {
-              "en": item['名前（ローマ字）'],
-              "ja": item.名前
+              "en": item['名（ローマ字）'],
+              "ja": item['名']
             }
           }
         ],
         "familyNames": [
           {
-            "annotation": item['苗字（かたかな）'],
+            "annotation": item['姓（かたかな）'],
             "nameToken": {
-              "en": item['苗字（ローマ字）'],
-              "ja": item.苗字
+              "en": item['姓（ローマ字）'],
+              "ja": item['姓']
             }
           }
         ],
       }
     })
-    setEnteredStudents(JSON.stringify(spreadsheetStudentList))
+    dispatch({type: 'add_students_from_spreadsheet', newStudents: spreadsheetStudentList})
   }
 
   return (
@@ -599,7 +617,7 @@ const Setup = () => {
         <Input type='file' accept='.xls, .xlsx, .csv' onChange={fileSelectHandler}/>
         <div>
           <p>File contents</p>
-          <p>{enteredStudents}</p>
+          <p>{JSON.stringify(configState.newStudents, null, 2)}</p>
         </div>
       </Tab>
       <Tab key='Seating Grid' title='Seating Grid' className='desk-planner grid gap-10 grid-cols-2'>
