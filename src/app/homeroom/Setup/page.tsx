@@ -4,7 +4,7 @@ import Seat, { SeatSpec } from './_Seat'
 import { StudentObj } from '../../../lib/StudentObj';
 import SeatingPlanBlueprint, { GridSpec } from './SeatingPlanBlueprint';
 import SeatingGridSettings from './SeatingGridSettings';
-import { Input, Tab, Tabs } from '@nextui-org/react';
+import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tab, Tabs, useDisclosure, UseDisclosureProps } from '@nextui-org/react';
 import DeskPlan from './DeskPlan';
 import DeskSlot, { DeskSlotProps } from './DeskSlot';
 import SeatingPlan from './SeatingPlan';
@@ -35,18 +35,106 @@ interface NewStudentListItem {
 }
 
 interface ConfigState {
+  addNewStudentsModalOpen: boolean
+  newStudentListModalOpen: boolean
+  deskLayoutModalOpen: boolean
+  deskAssignmentModalOpen: boolean
   newStudents: StudentObj[]
+  studentEnrollment: StudentObj[]
+}
+
+const initialConfigState: ConfigState = {
+  addNewStudentsModalOpen: false,
+  newStudentListModalOpen: false,
+  deskLayoutModalOpen: false,
+  deskAssignmentModalOpen: false,
+  newStudents: [],
+  studentEnrollment: [],
 }
 
 type ConfigAction =
-  | {type: 'add_students_from_spreadsheet'; newStudents: StudentObj[]}
+  | {type: 'create_new_class'}
+  | {type: 'create_class_roll'; gradeLevel: string; }
+  | {type: 'cancel_configuration'}
+  | {type: 'finalize_student_list'}
+  | {type: 'add_new_students_from_spreadsheet'; newStudents: StudentObj[]}
+  | {type: 'update_new_student_family_name'; index: number; newValue: string }
+  | {type: 'update_new_student_family_name_katakana'; index: number; newValue: string }
+  | {type: 'update_new_student_family_name_romaji'; index: number; newValue: string }
+  | {type: 'update_new_student_given_name'; index: number; newValue: string }
+  | {type: 'update_new_student_given_name_katakana'; index: number; newValue: string }
+  | {type: 'update_new_student_given_name_romaji'; index: number; newValue: string }
+  | {type: 'delete_new_student'; index: number}
 
 const reducer = (state: ConfigState, action: ConfigAction): ConfigState => {
   switch (action.type) {
-    case 'add_students_from_spreadsheet':
+    case 'create_new_class':
       return {
         ...state,
-        newStudents: action.newStudents
+        addNewStudentsModalOpen: true
+      }
+    case 'add_new_students_from_spreadsheet':
+      return {
+        ...state,
+        newStudents: action.newStudents,
+        studentEnrollment: []
+      }
+    case 'cancel_configuration':
+      return initialConfigState
+    case 'finalize_student_list':
+      return {
+        ...state,
+        newStudents: [],
+        studentEnrollment: state.newStudents,
+        newStudentListModalOpen: false,
+        deskLayoutModalOpen: true
+      }
+    case 'update_new_student_family_name': {
+      const newState = {...state};
+      newState.newStudents[action.index].familyNames[0].nameToken.ja = action.newValue;
+      return newState
+    }
+
+    case 'update_new_student_family_name_katakana': {
+      const newState = {...state};
+      newState.newStudents[action.index].familyNames[0].annotation = action.newValue;
+      return newState
+    }
+
+    case 'update_new_student_family_name_romaji': {
+      const newState = {...state};
+      newState.newStudents[action.index].familyNames[0].nameToken.en = action.newValue;
+      return newState
+    }
+
+    case 'update_new_student_given_name': {
+      const newState = {...state};
+      newState.newStudents[action.index].givenNames[0].nameToken.ja = action.newValue;
+      return newState
+    }
+
+    case 'update_new_student_given_name_katakana': {
+      const newState = {...state};
+      newState.newStudents[action.index].givenNames[0].annotation = action.newValue;
+      return newState
+    }
+
+    case 'update_new_student_given_name_romaji': {
+      const newState = {...state};
+      newState.newStudents[action.index].givenNames[0].nameToken.en = action.newValue;
+      return newState
+    }
+    case 'delete_new_student': {
+      const newState = {...state};
+      newState.newStudents = [...state.newStudents]
+      newState.newStudents.splice(action.index, 1)
+      return newState
+    }
+
+
+    default:
+      return {
+        ...state
       }
   }
 }
@@ -489,7 +577,6 @@ const Setup = () => {
   const [spec, setSpec] = useState<GridSpec>(getDefaultGridSpec(studentList)) // default
   const [deskSlots, setDeskSlots] = useState<DeskSlotProps[]>(initializeDeskPlan(spec));
   const [desks, setDesks] = useState<SeatSpec[]>([]);
-
   let deskPlan: JSX.Element[] = deskSlots.map( (seat : DeskSlotProps) => {
     return (
       <DeskSlot 
@@ -506,8 +593,56 @@ const Setup = () => {
   })
   const desksJson: string = JSON.stringify(deskSlots, null, 2)
   const [enteredStudents, setEnteredStudents] =  useState<string | null | undefined>('file contents initialized');
-  const [configState, dispatch] = useReducer<(state: ConfigState, action: ConfigAction) => ConfigState>(reducer, {newStudents: []})
+  const [configState, dispatch] = useReducer<(state: ConfigState, action: ConfigAction) => ConfigState>(reducer, initialConfigState)
 
+
+  function getNewStudentFormGroups(newStudents: StudentObj[]): JSX.Element[] {
+    const formGroups: JSX.Element[] = []
+    for (let i = 0; i < newStudents.length; i++) {
+      formGroups.push((
+        <div key={'newStudentFormGroup' + i} className='flex' >
+          <Input 
+            type='text'
+            placeholder='Family Name'
+            value={newStudents[i].familyNames[0].nameToken.ja}
+            onChange={(event) => {dispatch({type: 'update_new_student_family_name', index: i, newValue: event.target.value})}} 
+          />
+          <Input
+            type='text'
+            placeholder='Family Name (Katakana)'
+            value={newStudents[i].familyNames[0].annotation}
+            onChange={(event) => {dispatch({type: 'update_new_student_family_name_katakana', index: i, newValue: event.target.value})}} 
+          />
+          <Input
+            type='text'
+            placeholder='Family Name (Romaji)'
+            value={newStudents[i].familyNames[0].nameToken.en}
+            onChange={(event) => {dispatch({type: 'update_new_student_family_name_romaji', index: i, newValue: event.target.value})}} 
+          />
+          <Input
+            type='text'
+            placeholder='Given Name'
+            value={newStudents[i].givenNames[0].nameToken.ja}
+            onChange={(event) => {dispatch({type: 'update_new_student_given_name', index: i, newValue: event.target.value})}} 
+          />
+          <Input
+            type='text'
+            placeholder='Given Name (Katakana)'
+            value={newStudents[i].givenNames[0].annotation}
+            onChange={(event) => {dispatch({type: 'update_new_student_given_name_katakana', index: i, newValue: event.target.value})}} 
+          />
+          <Input
+            type='text'
+            placeholder='Given Name (Romaji)'
+            value={newStudents[i].givenNames[0].nameToken.en}
+            onChange={(event) => {dispatch({type: 'update_new_student_given_name_romaji', index: i, newValue: event.target.value})}} 
+          />
+          <Button color='danger' onPress={() => {dispatch({type: 'delete_new_student', index: i})}}>Delete</Button>
+      </div>
+      ))
+    }
+    return formGroups
+  }
   function studentDragStartHandler(event: DragEvent) {
     
   }
@@ -605,31 +740,80 @@ const Setup = () => {
         ],
       }
     })
-    dispatch({type: 'add_students_from_spreadsheet', newStudents: spreadsheetStudentList})
+    dispatch({type: 'add_new_students_from_spreadsheet', newStudents: spreadsheetStudentList})
   }
 
   return (
-    <Tabs>
-      <Tab key='Homeroom Details' title='Homeroom Details'>
+    <>
+      <Modal id='add-new-students' isOpen={configState.addNewStudentsModalOpen} size='5xl'>
+        <ModalContent>
+          <ModalHeader>
+            Create a New Class
+          </ModalHeader>
+          <ModalBody>
+            <div>
+              <Input type='file' accept='.xls, .xlsx, .csv' onChange={fileSelectHandler}/>
+              <div>
+                {getNewStudentFormGroups(configState.newStudents)}
+              </div>
+              {JSON.stringify(configState.newStudents, null, 2)}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color='primary' isDisabled={configState.newStudents.length === 0} onPress={() => {dispatch({type:'finalize_student_list'})}}>
+              Next
+            </Button>
+            <Button>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      <Modal id='set-desk-layout' isOpen={configState.deskLayoutModalOpen} size='5xl'>
+        <ModalContent>
+          <ModalHeader>
+            Set Desk Layout
+          </ModalHeader>
+          <ModalBody>
+            <div className={`desk-plan grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
+              {deskPlan}
+            </div>
+            <SeatingGridSettings grid={spec} onRowCountChange={rowCountChangeHandler} onColumnCountChange={columnCountChangeHandler}/>
+          </ModalBody>
+          <ModalFooter>
+            <Button color='primary' isDisabled={configState.newStudents.length === 0}>
+              Next
+            </Button>
+            <Button>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      <Button onPress={() => {dispatch({type: 'create_new_class'})}}>New Class</Button>
+      {/* <Tabs>
+        <Tab key='Homeroom Details' title='Homeroom Details'>
 
-      </Tab>
-      <Tab key='Student List' title='Student List'>
-        <Input type='file' accept='.xls, .xlsx, .csv' onChange={fileSelectHandler}/>
-        <div>
-          <p>File contents</p>
-          <p>{JSON.stringify(configState.newStudents, null, 2)}</p>
-        </div>
-      </Tab>
-      <Tab key='Seating Grid' title='Seating Grid' className='desk-planner grid gap-10 grid-cols-2'>
-        <div className={`desk-plan grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
-          {deskPlan}
-        </div>
-        <SeatingGridSettings grid={spec} onRowCountChange={rowCountChangeHandler} onColumnCountChange={columnCountChangeHandler}/>
-      </Tab>
-      <Tab key='Desk Plan' title='Desk Plan' className={`grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
-        <SeatingPlan students={studentList} deskSlots={deskSlots} seatingGrid={spec}></SeatingPlan>
-      </Tab>
-    </Tabs>
+        </Tab>
+        <Tab key='Student List' title='Student List'>
+          <Input type='file' accept='.xls, .xlsx, .csv' onChange={fileSelectHandler}/>
+          <div>
+            <p>File contents</p>
+            <p>{JSON.stringify(configState.newStudents, null, 2)}</p>
+          </div>
+        </Tab>
+        <Tab key='Seating Grid' title='Seating Grid' className='desk-planner grid gap-10 grid-cols-2'>
+          <div className={`desk-plan grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
+            {deskPlan}
+          </div>
+          <SeatingGridSettings grid={spec} onRowCountChange={rowCountChangeHandler} onColumnCountChange={columnCountChangeHandler}/>
+        </Tab>
+        <Tab key='Desk Plan' title='Desk Plan' className={`grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
+          <SeatingPlan students={studentList} deskSlots={deskSlots} seatingGrid={spec}></SeatingPlan>
+        </Tab>
+      </Tabs> */}
+    </>
+
   )
 }
 
