@@ -1,6 +1,6 @@
 import { Card } from '@nextui-org/react'
 import React, { useState } from 'react'
-import DeskSlot from './DeskSlot'
+import DeskGridCell from './DeskSlot'
 
 function handleSlotStateChange() {
 

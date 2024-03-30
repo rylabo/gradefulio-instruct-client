@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import Seat, { DeskSlotProps } from './DeskSlot'
+import Seat, { DeskGridCellProps } from './DeskSlot'
 import { StudentObj } from '../../../lib/StudentObj';
-import DeskSlot from './DeskSlot';
+import DeskGridCell from './DeskSlot';
 
 
 export interface GridSpec {
@@ -12,19 +12,19 @@ export interface GridSpec {
 export interface BlueprintProps {
   studentList: StudentObj[],
   gridSpec: GridSpec,
-  deskSlots: DeskSlotProps[]
+  deskSlots: DeskGridCellProps[]
 }
 
 export default function SeatingPlanBlueprint( {studentList, gridSpec, deskSlots} : BlueprintProps){
 
-  const deskPlan = deskSlots.map( (seat : DeskSlotProps) => {
+  const deskPlan = deskSlots.map( (seat : DeskGridCellProps) => {
     return (
-      <DeskSlot 
-        key={`${seat.slotNumber}`}
+      <DeskGridCell 
+        key={`${seat.cellNumber}`}
         row={seat.row}
         column={seat.column}
-        slotNumber={seat.slotNumber}
-        directive={seat.directive}
+        cellNumber={seat.cellNumber}
+        intent={seat.intent}
         grid={seat.grid}
         listSelectionHandler={seat.listSelectionHandler}
       /> 

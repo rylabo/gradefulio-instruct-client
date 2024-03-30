@@ -1,17 +1,20 @@
-import React, { useState } from 'react'
+import React, { useState, Key } from 'react'
 // import { SeatSpec } from './_Seat'
 import { Card, CardBody } from '@nextui-org/card';
 import { Listbox, ListboxItem, Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react';
 import { GridSpec } from './SeatingPlanBlueprint';
 
-export interface DeskSlotProps {
+export interface DeskGridCellProps {
   row : number,
   column : number,
-  directive : number,
-  slotNumber : number,
-  seatNumber ?: number | undefined,
-  grid: GridSpec
-  listSelectionHandler: Function
+  intent : number,
+  cellNumber : number,
+  assignedDeskNumber ?: number | undefined,
+  grid: GridSpec,
+}
+
+export interface DeskGridCellEvents {
+  onIntentChange: (key: Key) => void
 }
 
 function getDirectiveListItems(slotStates: string[]) {
@@ -24,8 +27,8 @@ function getDirectiveListItems(slotStates: string[]) {
   return slotItems
 }
 
-function DeskSlot(
-  {row, column, seatNumber, grid, directive, slotNumber, listSelectionHandler} : DeskSlotProps 
+function DeskGridCell(
+  {row, column, assignedDeskNumber: seatNumber, grid, intent: directive, cellNumber: slotNumber, onIntentChange} : DeskGridCellProps & DeskGridCellEvents 
 ) {
   const slotStates: string[] = [
     'Use',
@@ -53,7 +56,7 @@ function DeskSlot(
           aria-label='Actions'
           disallowEmptySelection
           selectionMode='single'
-          onAction={(key) => {listSelectionHandler(key)}}>
+          onAction={(key) => {onIntentChange(key)}}>
           {stateButtons}
         </Listbox>
       </PopoverContent>
@@ -61,4 +64,4 @@ function DeskSlot(
   )
 }
 
-export default DeskSlot
+export default DeskGridCell

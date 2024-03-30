@@ -2,10 +2,10 @@ import React, { DragEventHandler, useState } from 'react'
 import { GridSpec } from './SeatingPlanBlueprint'
 import { Card, CardBody, CardFooter, CardHeader, Chip } from '@nextui-org/react'
 import { StudentObj } from '../../../lib/StudentObj'
-import { DeskSlotProps } from './DeskSlot'
+import { DeskGridCellProps } from './DeskSlot'
 
 export interface SeatSpec {
-  deskSlot: DeskSlotProps
+  deskSlot: DeskGridCellProps
   occupant ?: StudentObj
 }
 
@@ -26,7 +26,7 @@ export default function Seat(
     <Card 
       className={`row-start-${deskSlot.grid.rows - deskSlot.row + 1} col-start-${deskSlot.column}`}
     >
-      <CardHeader>{deskSlot.seatNumber}</CardHeader>
+      <CardHeader>{deskSlot.assignedDeskNumber}</CardHeader>
       <CardBody>
         {occupant ? 
           (<Chip draggable='true' onDragStart={dragStartHandler}>

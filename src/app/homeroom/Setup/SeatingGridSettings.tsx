@@ -1,27 +1,37 @@
-import { Slider } from '@nextui-org/react'
+import { Slider, SliderValue } from '@nextui-org/react'
 import React from 'react'
 import { GridSpec } from './SeatingPlanBlueprint'
 
-export default function SeatingGridSettings({grid, onRowCountChange, onColumnCountChange} : {grid: GridSpec, onRowCountChange: Function, onColumnCountChange: Function}) {
+export default function SeatingGridSettings({grid, onRowCountChange, onColumnCountChange} : {grid: GridSpec, onRowCountChange: (newRowCount: number) => void, onColumnCountChange: (newcColumnCount: number) => void}) {
   return (
     <div className='flex flex-col gap-6 w-full max-w-md'>
       <Slider
         label='Rows'
         minValue={1}
         maxValue={6}
-        defaultValue={5}
+        defaultValue={grid.rows}
         step={1}
         className='row-setting'
-        onChangeEnd={(rows) => {onRowCountChange(grid, rows)}}
+        onChangeEnd={(rows: SliderValue) => {
+          if (typeof rows === 'number')
+            onRowCountChange(rows)
+          else
+            onRowCountChange(rows[0])
+        }}
       />
       <Slider 
         label='Columns'
         minValue={1}
         maxValue={7}
-        defaultValue={4}
+        defaultValue={grid.columns}
         step={1}
         className='column-setting'
-        onChangeEnd={(columns) => {onColumnCountChange(grid, columns)}}
+        onChangeEnd={(columns: SliderValue) => {
+          if (typeof columns === 'number')
+            onColumnCountChange(columns)
+          else
+            onColumnCountChange(columns[0])
+        }}
       />
     </div>
   )
