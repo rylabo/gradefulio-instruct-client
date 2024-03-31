@@ -15,7 +15,34 @@ interface NewStudentListItem {
   '姓（ローマ字）': string
   '名（ローマ字）': string
 }
+
+type Name = 
+  | {
+      key: string
+      en: string
+      ja: string  
+    }
+  | {}
+
+type SchoolGrade = 
+| '小1'
+| '小2'
+| '小3'
+| '小4'
+| '小5'
+| '小6'
+| '中1'
+| '中2'
+| '中3'
+| '高1'
+| '高2'
+| '高3'
+| undefined
+
 interface ClassroomState {
+  className: Name
+  gradeLevel: SchoolGrade
+  classNumber: number | undefined
   studentEnrollment: StudentObj[]
   deskLayout: GridSpec
   deskLayoutCells: DeskGridCellProps[]
@@ -27,6 +54,13 @@ interface ClassEnrollmentState {
 
 
 const initialConfigState: ClassroomState = {
+  className: {
+    key: undefined,
+    en: undefined,
+    ja: undefined
+  },
+  gradeLevel: undefined,
+  classNumber: undefined,
   studentEnrollment: [],
   deskLayout: {rows: 0, columns: 0},
   deskLayoutCells: []
