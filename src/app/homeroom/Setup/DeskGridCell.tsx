@@ -2,19 +2,23 @@ import React, { useState, Key } from 'react'
 // import { SeatSpec } from './_Seat'
 import { Card, CardBody } from '@nextui-org/card';
 import { Listbox, ListboxItem, Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react';
-import { GridSpec } from './SeatingPlanBlueprint';
+import { GridSpec } from './SeatingGridSettings';
+import { StudentObj } from '../../../lib/StudentObj';
 
 export interface DeskGridCellProps {
   row : number,
   column : number,
   intent : number,
   cellNumber : number,
-  assignedDeskNumber ?: number | undefined,
   grid: GridSpec,
 }
 
 export interface DeskGridCellEvents {
   onIntentChange: (key: Key) => void
+}
+
+export interface AssignedDeskGridCell {
+  assignedTo: StudentObj
 }
 
 function getDirectiveListItems(slotStates: string[]) {
@@ -28,7 +32,7 @@ function getDirectiveListItems(slotStates: string[]) {
 }
 
 function DeskGridCell(
-  {row, column, assignedDeskNumber: seatNumber, grid, intent: directive, cellNumber: slotNumber, onIntentChange} : DeskGridCellProps & DeskGridCellEvents 
+  {row, column, grid, intent, cellNumber: slotNumber, onIntentChange} : DeskGridCellProps & DeskGridCellEvents
 ) {
   const slotStates: string[] = [
     'Use',
@@ -43,9 +47,9 @@ function DeskGridCell(
       <PopoverTrigger className={`col-start-${column} row-start-${grid.rows - row + 1}`}>
         <Card isPressable>
           <CardBody>
-            {directive}
+            {intent}
             <br />
-            {seatNumber ? seatNumber : "empty"}
+            {intent!== 2 ? "desk" : "empty"}
             <br />
             {slotNumber}
           </CardBody>

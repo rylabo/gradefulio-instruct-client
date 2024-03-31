@@ -1,6 +1,10 @@
 import { Slider, SliderValue } from '@nextui-org/react'
 import React from 'react'
-import { GridSpec } from './SeatingPlanBlueprint'
+
+export interface GridSpec {
+  rows: number
+  columns: number
+}
 
 export default function SeatingGridSettings({grid, onRowCountChange, onColumnCountChange} : {grid: GridSpec, onRowCountChange: (newRowCount: number) => void, onColumnCountChange: (newcColumnCount: number) => void}) {
   return (

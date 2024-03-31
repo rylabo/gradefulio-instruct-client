@@ -1,45 +1,46 @@
 import React from 'react'
-import Seat, { SeatSpec } from './_Seat'
 import { StudentObj } from '../../../lib/StudentObj'
-import { BlueprintProps, GridSpec } from './SeatingPlanBlueprint'
-import { DeskGridCellProps } from './DeskSlot'
+import { GridSpec } from './SeatingGridSettings'
+import { DeskGridCellProps } from './DeskGridCell'
 
-export interface SeatingPlanProps {
+export interface DeskLayout {
+  grid: GridSpec,
   students: StudentObj[]
-  deskSlots: DeskGridCellProps[]
-  seatingGrid: GridSpec
+  gridCells: DeskGridCellProps[]
 }
 
-function createDesks(students: StudentObj[], deskSlots: DeskGridCellProps[]): JSX.Element[] {
-  const 
-    seats: JSX.Element[] = []
+export interface Desk {
+  row: number,
+  column: number,
+  cellNumber: number,
+  assignedTo?: StudentObj
+}
+
+function assignDesks(students: StudentObj[], deskGridCells: DeskGridCellProps[]): DeskLayout[] {
+  const assignedDeskGridCells: DeskLayout[] = [...deskGridCells]
   let
     studentIndex = 0,
-    deskIndex = 1,
-    newSeat: JSX.Element
+    deskIndex = 1
 
-  for (let i: number = 0; i < deskSlots.length; i++) {
-    if (deskSlots[i].intent === 0) {
-      newSeat = (
-        <Seat key={deskSlots[i].assignedDeskNumber} deskSlot={deskSlots[i]} occupant={students[studentIndex]}></Seat>
-      )
-      studentIndex++;
-      seats.push(newSeat)
-    } else if (deskSlots[i].intent === 1) {
-      newSeat = (
-        <Seat key={deskSlots[i].assignedDeskNumber} deskSlot={deskSlots[i]}></Seat>
-      )
-      seats.push(newSeat)
+  for (let i: number = 0; i < assignedDeskGridCells.length; i++) {
+    if (assignedDeskGridCells[i].intent === 0) {
+      assignedDeskGridCells[i].assignedTo = students[studentIndex]
+      studentIndex++
+      deskIndex++
+    } else if (assignedDeskGridCells[i].intent === 1) {
+      deskIndex++
     }
   }
-  return seats
+  return assignedDeskGridCells
 }
 
-function SeatingPlan({students, deskSlots} : SeatingPlanProps) {
-  let desks: JSX.Element[] = createDesks(students, deskSlots)
+function Desk({row, column, cellNumber, grid, students, gridCells} : DeskLayout) {
+  let desks: DeskLayout[] = assignDesks(students, deskSlots)
   return (
     <>
-      {desks}
+      {desks.map((deskCell: DeskGridCellProps) => {
+        return(<>)
+      })}
     </>
   )
 }

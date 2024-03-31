@@ -1,30 +1,12 @@
 'use client';
-import React, { use, useLayoutEffect, useState, DragEvent, ChangeEvent, useReducer, Key } from 'react'
-import Seat, { SeatSpec } from './_Seat'
+import React, { useState, DragEvent, ChangeEvent, useReducer, Key } from 'react'
 import { StudentObj } from '../../../lib/StudentObj';
-import SeatingPlanBlueprint, { GridSpec } from './SeatingPlanBlueprint';
-import SeatingGridSettings from './SeatingGridSettings';
-import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tab, Tabs, useDisclosure, UseDisclosureProps } from '@nextui-org/react';
-import DeskPlan from './DeskPlan';
-import DeskGridCell, { DeskGridCellProps } from './DeskSlot';
-import SeatingPlan from './SeatingPlan';
+import SeatingGridSettings, { GridSpec } from './SeatingGridSettings';
+import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react';
+import DeskGridCell, { DeskGridCellProps } from './DeskGridCell';
+// import SeatingPlan from './SeatingPlan';
 import { read, utils } from 'xlsx';
 
-function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
-  let spec: GridSpec = {rows: 2, columns: 3};
-  const classSize = studentList.length
-
-  if (classSize > 6 && classSize <= 9) spec = {rows: 3, columns: 3}
-  else if (classSize > 9 && classSize <= 12) spec = {rows: 4, columns: 3}
-  else if (classSize > 12 && classSize <= 16) spec = {rows: 4, columns: 4}
-  else if (classSize > 16 && classSize <= 20)  spec = {rows: 5, columns: 4}
-  else if (classSize > 20 && classSize <= 25)  spec = {rows: 5, columns: 5}
-  else if (classSize > 25 && classSize <= 30)  spec = {rows: 6, columns: 5}
-  else if (classSize > 30 && classSize <= 36)  spec = {rows: 6, columns: 6}
-  else if (classSize > 36) spec = {rows: 7, columns: 6}
-
-  return spec
-}
 interface NewStudentListItem {
   '姓': string
   '名': string
@@ -33,39 +15,25 @@ interface NewStudentListItem {
   '姓（ローマ字）': string
   '名（ローマ字）': string
 }
-
-interface ConfigState {
-  addNewStudentsModalOpen: boolean
-  newStudentListModalOpen: boolean
-  deskLayoutModalOpen: boolean
-  deskAssignmentModalOpen: boolean
-  newStudents: StudentObj[]
+interface ClassroomState {
   studentEnrollment: StudentObj[]
   deskLayout: GridSpec
   deskLayoutCells: DeskGridCellProps[]
 }
 
-const initialConfigState: ConfigState = {
-  addNewStudentsModalOpen: false,
-  newStudentListModalOpen: false,
-  deskLayoutModalOpen: false,
-  deskAssignmentModalOpen: false,
-  newStudents: [],
+interface ClassEnrollmentState {
+  newStudents: StudentObj[]
+}
+
+
+const initialConfigState: ClassroomState = {
   studentEnrollment: [],
   deskLayout: {rows: 0, columns: 0},
   deskLayoutCells: []
 }
 
-function assignSeatNumbers(deskPlan: DeskGridCellProps[]) {
-  let seatNum: number = 1
-  for (let i: number = 0; i < deskPlan.length; i++) {
-    if (deskPlan[i].intent !== 2) {
-      deskPlan[i].assignedDeskNumber = seatNum
-      seatNum++
-    } else {
-      deskPlan[i].assignedDeskNumber = undefined
-    }
-  }
+const initialClassEnrollmentState: ClassEnrollmentState = {
+  newStudents: []
 }
 
 function newSeat(rowNum: number, colNum: number, spec: GridSpec, slot: number, directive: number): DeskGridCellProps {
@@ -87,15 +55,16 @@ function initializeDeskPlan(spec: GridSpec): DeskGridCellProps[] {
       slotNum++;
     }
   }
-  assignSeatNumbers(plan)  
   return plan
 }
 
-type ConfigAction =
-  | {type: 'create_new_class'}
+type ClassroomConfigAction =
   | {type: 'create_class_roll'; gradeLevel: string; }
   | {type: 'cancel_configuration'}
-  | {type: 'finalize_student_list'}
+  | {type: 'finalize_desk_layout'; newLayoutGrid: GridSpec; layoutCells: DeskGridCellProps[]}
+  | {type: 'finalize_student_list'; newStudents: StudentObj[]}
+
+type ClassEnrollmentAction = 
   | {type: 'add_new_students_from_spreadsheet'; newStudents: StudentObj[]}
   | {type: 'update_new_student_family_name'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_katakana'; newStudentArrayindex: number; newValue: string }
@@ -105,39 +74,13 @@ type ConfigAction =
   | {type: 'update_new_student_given_name_romaji'; newStudentArrayindex: number; newValue: string }
   | {type: 'delete_new_student'; newStudentArrayindex: number}
 
-  | {type: 'change_desk_layout_row_count'; newRowCount: number}
-  | {type: 'change_desk_layout_column_count'; newColumnCount: number}
-
-  | {type: 'change_intent_for_desk_layout_cell'; deskCellNumber: number, newIntent: number}
-
-const reducer = (state: ConfigState, action: ConfigAction): ConfigState => {
+const classEnrollmentReducer = (state: ClassEnrollmentState, action: ClassEnrollmentAction): ClassEnrollmentState => {
   switch (action.type) {
-    case 'create_new_class':
-      return {
-        ...state,
-        addNewStudentsModalOpen: true
-      }
-
     case 'add_new_students_from_spreadsheet':
       return {
         ...state,
         newStudents: action.newStudents,
-        studentEnrollment: []
       }
-
-    case 'cancel_configuration':
-      return initialConfigState
-
-    case 'finalize_student_list':{
-      const newState: ConfigState = {...state}
-      newState.newStudents = []
-      newState.studentEnrollment = state.newStudents
-      newState.deskLayout = getDefaultGridSpec(newState.studentEnrollment)
-      newState.deskLayoutCells = initializeDeskPlan(newState.deskLayout)
-      newState.newStudentListModalOpen = false
-      newState.deskLayoutModalOpen = true
-      return newState
-    }
 
     case 'update_new_student_family_name': {
       const newState = {...state};
@@ -181,34 +124,34 @@ const reducer = (state: ConfigState, action: ConfigAction): ConfigState => {
       newState.newStudents.splice(action.newStudentArrayindex, 1)
       return newState
     }
+    default:
+      return {
+        ...state
+      }   
 
+  }
+}
 
-    case 'change_desk_layout_row_count': {
-      const newState = {...state}
-      newState.deskLayout = {...state.deskLayout}
-      newState.deskLayoutCells = {...state.deskLayoutCells}
-      newState.deskLayout.rows = action.newRowCount
-      newState.deskLayoutCells = initializeDeskPlan(newState.deskLayout)
+const newClassReducer = (state: ClassroomState, action: ClassroomConfigAction): ClassroomState => {
+  switch (action.type) {
+
+    case 'cancel_configuration':
+      return initialConfigState
+
+    case 'finalize_desk_layout': {
+      const newState: ClassroomState = {...state}
+      newState.deskLayout = action.newLayoutGrid
+      newState.deskLayoutCells = action.layoutCells
       return newState
     }
 
-    case 'change_desk_layout_column_count': {
-      const newState = {...state}
-      newState.deskLayout = {...state.deskLayout}
-      newState.deskLayoutCells = {...state.deskLayoutCells}
-      newState.deskLayout.columns = action.newColumnCount
-      newState.deskLayoutCells = initializeDeskPlan(newState.deskLayout)
+    case 'finalize_student_list':{
+      const newState: ClassroomState = {...state}
+      // newState.newStudents = []
+      newState.studentEnrollment = action.newStudents
       return newState
     }
 
-    case 'change_intent_for_desk_layout_cell' :{
-      const newState = {...state}
-      newState.deskLayout = {...state.deskLayout}
-      newState.deskLayoutCells = [...state.deskLayoutCells]
-      newState.deskLayoutCells[action.deskCellNumber - 1].intent = action.newIntent
-      assignSeatNumbers(newState.deskLayoutCells)
-      return newState
-    }
 
     default:
       return {
@@ -217,24 +160,107 @@ const reducer = (state: ConfigState, action: ConfigAction): ConfigState => {
   }
 }
 
-const Setup = () => {
-  const [configState, dispatch] = useReducer<(state: ConfigState, action: ConfigAction) => ConfigState>(reducer, initialConfigState)
+interface DeskLayoutPlan {
+  deskLayout: GridSpec
+  deskLayoutCells: DeskGridCellProps[]
+}
 
-  const deskPlan: JSX.Element[] = []
-  for (let i = 0; i < configState.deskLayoutCells.length; i++) {
-    deskPlan.push(
-      <DeskGridCell 
-        key={`${configState.deskLayoutCells[i].cellNumber}`}
-        row={configState.deskLayoutCells[i].row}
-        column={configState.deskLayoutCells[i].column}
-        assignedDeskNumber={configState.deskLayoutCells[i].assignedDeskNumber}
-        cellNumber={configState.deskLayoutCells[i].cellNumber}
-        intent={configState.deskLayoutCells[i].intent}
-        grid={configState.deskLayoutCells[i].grid}
-        onIntentChange={handleChangeInDeskGridCellIntent(configState.deskLayoutCells[i].cellNumber)}
-      /> 
-    )
+const startingDeskLayoutPlan: DeskLayoutPlan = {
+  deskLayout: {rows: 1, columns: 1},
+  deskLayoutCells: []
+}
+
+function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
+  let spec: GridSpec = {rows: 2, columns: 3};
+  const classSize = studentList.length
+
+  if (classSize > 6 && classSize <= 9) spec = {rows: 3, columns: 3}
+  else if (classSize > 9 && classSize <= 12) spec = {rows: 4, columns: 3}
+  else if (classSize > 12 && classSize <= 16) spec = {rows: 4, columns: 4}
+  else if (classSize > 16 && classSize <= 20)  spec = {rows: 5, columns: 4}
+  else if (classSize > 20 && classSize <= 25)  spec = {rows: 5, columns: 5}
+  else if (classSize > 25 && classSize <= 30)  spec = {rows: 6, columns: 5}
+  else if (classSize > 30 && classSize <= 36)  spec = {rows: 6, columns: 6}
+  else if (classSize > 36) spec = {rows: 7, columns: 6}
+
+  return spec
+}
+
+type DeskLayoutPlanChange =
+| {type: 'find_initial_desk_layout'; studentList: StudentObj[]} 
+| {type: 'change_desk_layout_row_count'; newRowCount: number}
+| {type: 'change_desk_layout_column_count'; newColumnCount: number}
+| {type: 'change_intent_for_desk_layout_cell'; deskCellNumber: number, newIntent: number}
+
+const deskLayoutReducer = (layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanChange): DeskLayoutPlan => {
+  switch (change.type) {
+    case 'find_initial_desk_layout' : {
+      const gridSpec: GridSpec = getDefaultGridSpec(change.studentList)
+      return {
+        deskLayout: getDefaultGridSpec(change.studentList),
+        deskLayoutCells: initializeDeskPlan(gridSpec)
+      }
+    }
+
+    case 'change_desk_layout_row_count': {
+      const newLayoutPlan = {...layoutPlan}
+      newLayoutPlan.deskLayout = {...layoutPlan.deskLayout}
+      newLayoutPlan.deskLayoutCells = {...layoutPlan.deskLayoutCells}
+      newLayoutPlan.deskLayout.rows = change.newRowCount
+      newLayoutPlan.deskLayoutCells = initializeDeskPlan(newLayoutPlan.deskLayout)
+      return newLayoutPlan
+    }
+
+    case 'change_desk_layout_column_count': {
+      const newLayoutPlan = {...layoutPlan}
+      newLayoutPlan.deskLayout = {...layoutPlan.deskLayout}
+      newLayoutPlan.deskLayoutCells = {...layoutPlan.deskLayoutCells}
+      newLayoutPlan.deskLayout.columns = change.newColumnCount
+      newLayoutPlan.deskLayoutCells = initializeDeskPlan(newLayoutPlan.deskLayout)
+      return newLayoutPlan
+    }
+
+    case 'change_intent_for_desk_layout_cell' :{
+      const newLayoutPlan = {...layoutPlan}
+      newLayoutPlan.deskLayout = {...layoutPlan.deskLayout}
+      newLayoutPlan.deskLayoutCells = {...layoutPlan.deskLayoutCells}
+      newLayoutPlan.deskLayoutCells[change.deskCellNumber - 1].intent = change.newIntent
+      return newLayoutPlan
+    }
+
+    default:
+      return {
+        ...layoutPlan
+      }
   }
+}
+
+
+const Setup = () => {
+  const [currentDialogStep, setCurrentDialogStep] = useState<number>(0)
+
+  const [newClassState, dispatchNewClassAction] = useReducer<(state: ClassroomState, action: ClassroomConfigAction) => ClassroomState>(newClassReducer, initialConfigState)
+  const [newClassEnrollmentState, dispatchClassEnrollmentChange] = useReducer<(state: ClassEnrollmentState, action: ClassEnrollmentAction) => ClassEnrollmentState>(classEnrollmentReducer, initialClassEnrollmentState)
+  const [deskLayoutPlan, dispatchLayoutChange] = useReducer<(layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanChange) => DeskLayoutPlan>(deskLayoutReducer, startingDeskLayoutPlan)
+
+  function getDeskLayout(deskLayoutCells: DeskGridCellProps[]): JSX.Element[] {
+    const deskPlan: JSX.Element[] = []
+    for (let i = 0; i < deskLayoutCells.length; i++) {
+      deskPlan.push(
+        <DeskGridCell 
+          key={`${deskLayoutCells[i].cellNumber}`}
+          row={deskLayoutCells[i].row}
+          column={deskLayoutCells[i].column}
+          cellNumber={deskLayoutCells[i].cellNumber}
+          intent={deskLayoutCells[i].intent}
+          grid={deskLayoutCells[i].grid}
+          onIntentChange={handleChangeInDeskGridCellIntent(deskLayoutCells[i].cellNumber)}
+        /> 
+      )
+    }
+    return deskPlan
+  }
+
   function getNewStudentFormGroups(newStudents: StudentObj[]): JSX.Element[] {
     const formGroups: JSX.Element[] = []
     for (let i = 0; i < newStudents.length; i++) {
@@ -244,39 +270,39 @@ const Setup = () => {
             type='text'
             placeholder='Family Name'
             value={newStudents[i].familyNames[0].nameToken.ja}
-            onChange={(event) => {dispatch({type: 'update_new_student_family_name', newStudentArrayindex: i, newValue: event.target.value})}} 
+            onChange={(event) => {dispatchClassEnrollmentChange({type: 'update_new_student_family_name', newStudentArrayindex: i, newValue: event.target.value})}} 
           />
           <Input
             type='text'
             placeholder='Family Name (Katakana)'
             value={newStudents[i].familyNames[0].annotation}
-            onChange={(event) => {dispatch({type: 'update_new_student_family_name_katakana', newStudentArrayindex: i, newValue: event.target.value})}} 
+            onChange={(event) => {dispatchClassEnrollmentChange({type: 'update_new_student_family_name_katakana', newStudentArrayindex: i, newValue: event.target.value})}} 
           />
           <Input
             type='text'
             placeholder='Family Name (Romaji)'
             value={newStudents[i].familyNames[0].nameToken.en}
-            onChange={(event) => {dispatch({type: 'update_new_student_family_name_romaji', newStudentArrayindex: i, newValue: event.target.value})}} 
+            onChange={(event) => {dispatchClassEnrollmentChange({type: 'update_new_student_family_name_romaji', newStudentArrayindex: i, newValue: event.target.value})}} 
           />
           <Input
             type='text'
             placeholder='Given Name'
             value={newStudents[i].givenNames[0].nameToken.ja}
-            onChange={(event) => {dispatch({type: 'update_new_student_given_name', newStudentArrayindex: i, newValue: event.target.value})}} 
+            onChange={(event) => {dispatchClassEnrollmentChange({type: 'update_new_student_given_name', newStudentArrayindex: i, newValue: event.target.value})}} 
           />
           <Input
             type='text'
             placeholder='Given Name (Katakana)'
             value={newStudents[i].givenNames[0].annotation}
-            onChange={(event) => {dispatch({type: 'update_new_student_given_name_katakana', newStudentArrayindex: i, newValue: event.target.value})}} 
+            onChange={(event) => {dispatchClassEnrollmentChange({type: 'update_new_student_given_name_katakana', newStudentArrayindex: i, newValue: event.target.value})}} 
           />
           <Input
             type='text'
             placeholder='Given Name (Romaji)'
             value={newStudents[i].givenNames[0].nameToken.en}
-            onChange={(event) => {dispatch({type: 'update_new_student_given_name_romaji', newStudentArrayindex: i, newValue: event.target.value})}} 
+            onChange={(event) => {dispatchClassEnrollmentChange({type: 'update_new_student_given_name_romaji', newStudentArrayindex: i, newValue: event.target.value})}} 
           />
-          <Button color='danger' onPress={() => {dispatch({type: 'delete_new_student', newStudentArrayindex: i})}}>Delete</Button>
+          <Button color='danger' onPress={() => {dispatchClassEnrollmentChange({type: 'delete_new_student', newStudentArrayindex: i})}}>Delete</Button>
       </div>
       ))
     }
@@ -286,21 +312,9 @@ const Setup = () => {
     
   }
 
-  function rowCountChangeHandler(newRowCount: number) {
-    dispatch({type: 'change_desk_layout_row_count', newRowCount: newRowCount})
-  }
-
-  function columnCountChangeHandler(newColumnCount: number) {
-    dispatch({type: 'change_desk_layout_column_count', newColumnCount: newColumnCount})
-}
-
-  function changeIntentForDeskGridCell(i: number, key:Key) {
-    dispatch({type: 'change_intent_for_desk_layout_cell', deskCellNumber: i, newIntent: Number(key)})
-  }
-
   function handleChangeInDeskGridCellIntent(i: number) {
     return (key:Key) => {
-      changeIntentForDeskGridCell(i, key)
+      dispatchLayoutChange({type: 'change_intent_for_desk_layout_cell', deskCellNumber: i, newIntent: Number(key)})
     }
   }
 
@@ -336,12 +350,12 @@ const Setup = () => {
         ],
       }
     })
-    dispatch({type: 'add_new_students_from_spreadsheet', newStudents: spreadsheetStudentList})
+    dispatchClassEnrollmentChange({type: 'add_new_students_from_spreadsheet', newStudents: spreadsheetStudentList})
   }
 
   return (
     <>
-      <Modal id='add-new-students' isOpen={configState.addNewStudentsModalOpen} size='5xl'>
+      <Modal id='add-new-students' isOpen={currentDialogStep === 1} size='5xl'>
         <ModalContent>
           <ModalHeader>
             Create a New Class
@@ -350,13 +364,21 @@ const Setup = () => {
             <div>
               <input type='file' accept='.xls, .xlsx, .csv' onChange={fileSelectHandler}/>
               <div>
-                {getNewStudentFormGroups(configState.newStudents)}
+                {getNewStudentFormGroups(newClassEnrollmentState.newStudents)}
               </div>
-              {JSON.stringify(configState.newStudents, null, 2)}
+              {JSON.stringify(newClassEnrollmentState.newStudents, null, 2)}
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button color='primary' isDisabled={configState.newStudents.length === 0} onPress={() => {dispatch({type:'finalize_student_list'})}}>
+            <Button 
+              color='primary'
+              isDisabled={newClassEnrollmentState.newStudents.length === 0}
+              onPress={() => {
+                dispatchNewClassAction({type:'finalize_student_list', newStudents: newClassEnrollmentState.newStudents})
+                dispatchLayoutChange({type: 'find_initial_desk_layout', studentList: newClassState.studentEnrollment})
+                setCurrentDialogStep(2)
+              }}
+            >
               Next
             </Button>
             <Button>
@@ -365,16 +387,20 @@ const Setup = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-      <Modal id='set-desk-layout' isOpen={configState.deskLayoutModalOpen} size='5xl'>
+      <Modal id='set-desk-layout' isOpen={currentDialogStep === 2} size='5xl'>
         <ModalContent>
           <ModalHeader>
             Set Desk Layout
           </ModalHeader>
           <ModalBody>
-            <div className={`desk-plan grid gap-10 grid-rows-${configState.deskLayout.rows} grid-cols-${configState.deskLayout.columns}`}>
-              {deskPlan}
+            <div className={`desk-plan grid gap-10 grid-rows-${deskLayoutPlan.deskLayout.rows} grid-cols-${deskLayoutPlan.deskLayout.columns}`}>
+              {getDeskLayout(deskLayoutPlan.deskLayoutCells)}
             </div>
-            <SeatingGridSettings grid={configState.deskLayout} onRowCountChange={rowCountChangeHandler} onColumnCountChange={columnCountChangeHandler}/>
+            <SeatingGridSettings 
+              grid={deskLayoutPlan.deskLayout}
+              onRowCountChange={(newRowCount: number) => {dispatchLayoutChange({type: 'change_desk_layout_row_count', newRowCount: newRowCount})}}
+              onColumnCountChange={(newColumnCount: number) => {dispatchLayoutChange({type: 'change_desk_layout_column_count', newColumnCount: newColumnCount})}}
+            />
           </ModalBody>
           <ModalFooter>
             <Button color='primary'>
@@ -386,15 +412,15 @@ const Setup = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-      <Modal id='assign-seats' isOpen={configState.deskAssignmentModalOpen} size='5xl'>
+      <Modal id='assign-seats' isOpen={currentDialogStep === 3} size='5xl'>
         <ModalContent>
           <ModalHeader>
             Assign Seats
           </ModalHeader>
           <ModalBody>
-            <div className={`desk-plan grid gap-10 grid-rows-${configState.deskLayout.rows} grid-cols-${configState.deskLayout.columns}`}>
-              <SeatingPlan students={configState.studentEnrollment} deskSlots={configState.deskLayoutCells} seatingGrid={configState.deskLayout}></SeatingPlan>
-            </div>
+            {/* <div className={`desk-plan grid gap-10 grid-rows-${newClassState.deskLayout.rows} grid-cols-${newClassState.deskLayout.columns}`}>
+              <SeatingPlan students={newClassState.studentEnrollment} deskSlots={newClassState.deskLayoutCells} seatingGrid={newClassState.deskLayout}></SeatingPlan>
+            </div> */}
           </ModalBody>
           <ModalFooter>
             <Button color='primary'>
@@ -406,28 +432,9 @@ const Setup = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-      <Button onPress={() => {dispatch({type: 'create_new_class'})}}>New Class</Button>
-      {/* <Tabs>
-        <Tab key='Homeroom Details' title='Homeroom Details'>
-
-        </Tab>
-        <Tab key='Student List' title='Student List'>
-          <Input type='file' accept='.xls, .xlsx, .csv' onChange={fileSelectHandler}/>
-          <div>
-            <p>File contents</p>
-            <p>{JSON.stringify(configState.newStudents, null, 2)}</p>
-          </div>
-        </Tab>
-        <Tab key='Seating Grid' title='Seating Grid' className='desk-planner grid gap-10 grid-cols-2'>
-          <div className={`desk-plan grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
-            {deskPlan}
-          </div>
-          <SeatingGridSettings grid={spec} onRowCountChange={rowCountChangeHandler} onColumnCountChange={columnCountChangeHandler}/>
-        </Tab>
-        <Tab key='Desk Plan' title='Desk Plan' className={`grid gap-10 grid-rows-${spec.rows} grid-cols-${spec.columns}`}>
-          <SeatingPlan students={studentList} deskSlots={deskSlots} seatingGrid={spec}></SeatingPlan>
-        </Tab>
-      </Tabs> */}
+      <Button onPress={() => {setCurrentDialogStep(1)}}>
+        New Class
+      </Button>
     </>
 
   )
