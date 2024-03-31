@@ -81,11 +81,11 @@ Returns an array of Class objects representing the classes that a user teaches.
             "nameToken": {
               "en": "Tarou",
               "ja": "太郎"
+            }
           }
         }
       }
     ]
-
   }
 ]
 ```
