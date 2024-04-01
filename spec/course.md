@@ -28,7 +28,13 @@ Get a summary of the user's courses.
 |-----|------------|-------|
 | `Accept` | `application/ld+json`, `application/json` | Optional. Defaults to JSON |
 
-## Request Body
+## Example Request Body
+
+This illustrates a case of a JHS first year course called "英語" in Japanese, and "English" in English. The seating plan is as follows.
+
+![a seating plan example](./seatingPlanExample.svg)
+
+The request body for this class setup would look like this:
 
 ```json
 {
@@ -39,27 +45,85 @@ Get a summary of the user's courses.
   },
   "gradeLevel": "中1",
   "classNumber": 1,
-  "deskRows": 4,
-  "deskColumns": 5,
+  "deskRows": 3,
+  "deskColumns": 3,
   "desks": [
-    {
-      "@type": ["Desk"],
-      "position": {
-        "row": 1,
-        "column": 2
-      },
-      "assignedTo": "https://www.gradeful.io/api/course/{course-id}/student/{student-id}"
-    }
+    {"@id": "_:d11", "@type": ["Desk"],"row": 1, "column": 1},
+    {"@id": "_:d12", "@type": ["Desk"],"row": 1, "column": 2},
+    {"@id": "_:d13", "@type": ["Desk"],"row": 1, "column": 3},
+    {"@id": "_:d21", "@type": ["Desk"],"row": 2, "column": 1},
+    {"@id": "_:d22", "@type": ["Desk"],"row": 2, "column": 2},
+    {"@id": "_:d23", "@type": ["Desk"],"row": 2, "column": 3},
+    {"@id": "_:d32", "@type": ["Desk"],"row": 3, "column": 2}
   ],
   "enrollment": [
     {
-      
+      "@type": ["Student"],
+      "givenNames": [{
+        "annotation": "タロウ",
+        "nameToken": {"en": "Tarou", "ja": "太郎"}
+      }],
+      "familyNames": [{
+        "annotation": "ヤマダ",
+        "nameToken": {"en": "Yamada", "ja": "山田"}
+      }],
+      "atDesk": "_:d22"
+    },
+    {
+      "@type": ["Student"],
+      "givenNames": [{
+        "annotation": "ハナコ",
+        "nameToken": {"en": "Hanako", "ja": "花子"}
+      }],
+      "familyNames": [{
+        "annotation": "ヤマダ",
+        "nameToken": {"en": "Yamada", "ja": "山田"}
+      }],
+      "atDesk": "_:d13"
+    },
+    {
+      "@type": ["Student"],
+      "givenNames": [{
+        "annotation": "マリコ",
+        "nameToken": {"en": "Mariko", "ja": "まり子"}
+      }],
+      "familyNames": [{
+        "annotation": "スズキ",
+        "nameToken": {"en": "Suzuki", "ja": "鈴木"}
+      }],
+      "atDesk": "_:d21"
+    },
+    {
+      "@type": ["Student"],
+      "givenNames": [{
+        "annotation": "ユウ",
+        "nameToken": {"en": "Yuu", "ja": "ゆう"}
+      }],
+      "familyNames": [{
+        "annotation": "タナカ",
+        "nameToken": {"en": "Tanaka", "ja": "田中"}
+      }],
+      "atDesk": "_:d12"
+    },
+    {
+      "@type": ["Student"],
+      "givenNames": [{
+        "annotation": "ケンタロ",
+        "nameToken": {"en": "Kentaro", "ja": "健太郎"}
+      }],
+      "familyNames": [{
+        "annotation": "サトウ",
+        "nameToken": {"en": "Satou", "ja": "佐藤"}
+      }],
+      "atDesk": "_:d11"
     }
   ]
 }
 ```
 
-### Type `Course`
+### Object Class
+
+#### `Course` Properties
 
 | Key | Type | Example| Constraints |
 |-----|------|--------|-------------|
@@ -71,9 +135,14 @@ Get a summary of the user's courses.
 |desks| [`Desk[]`](#type-desk) | [(See type definition)](#type-desk)| desks.length &leq; deskRows * deskColumns |
 |enrollment| [`Student[]`](#type-student) | [(See type definition)](#type-student) | Array length &leq; desks.length|
 
-### Type `Desk`
+#### `Desk` Properties
+| Key    | Type     | Example | Constraints                       |
+|--------|----------|---------|-----------------------------------|
+| @id    | IRI      | `_:d13` | Has the template`_:d{row}{column}`|
+| row    | `number` | `3`     |  0 < `row` < `Course.deskRows`            |
+| column | `number` | `2`     |  0 < `column` < `Course.deskColumns`      |
 
-### Type `Student`
+#### `Student` Properties
 
 ## Response Headers
 
@@ -181,6 +250,9 @@ Returns an array of Class objects representing the classes that a user teaches.
         },
         "assignedTo": "https://www.gradeful.io/api/course/{course-id}/student/{student-id}"
       }
+    ],
+    "enrollment": [
+
     ],
     "attendanceRecords": [
       {
