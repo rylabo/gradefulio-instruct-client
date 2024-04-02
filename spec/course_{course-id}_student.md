@@ -119,13 +119,13 @@ TBD
 
 ### Top Level
 
-| Key               | Type     | Example                                                 |
-|-------------------|----------|---------------------------------------------------------|
-| @id               | IRI      | `"https://.../api/course/NTE4NjU1NjAxNDM1/student/05/"` |
-| @type             | string[] | **Must be** `["Student"]`                               |
-| givenName         | Object   | [See Name Objects](#name-objects)                       |
-| familyName        | Object   | [See Name Objects](#name-objects)                       |
-| attendanceForTerm | Object   | [See Attendance Objects](attendance-objects)            |
+| Key               | Type     | Example                                                                 |
+|-------------------|----------|-------------------------------------------------------------------------|
+| @id               | IRI      | `"https://.../api/course/NTE4NjU1NjAxNDM1/student/05/"`                 |
+| @type             | string[] | **Must be** `["Student"]`                                               |
+| givenName         | Object   | [See Name Objects](#name-objects)                                       |
+| familyName        | Object   | [See Name Objects](#name-objects)                                       |
+| attendanceForTerm | Object   | [See Attendance Summary Objects](attendance-summary-objects)            |
 
 ### Name Objects
 
@@ -138,7 +138,7 @@ TBD
 
 **Note:** Either nameToken.en or nameToken.ja must be provided.
 
-### Attendance Objects
+### Attendance Summary Objects
 
 | Key               | Type     | Example                                               |
 |-------------------|----------|-------------------------------------------------------|
