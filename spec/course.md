@@ -47,77 +47,69 @@ The request body for this class setup would look like this:
   "classNumber": 1,
   "deskRows": 3,
   "deskColumns": 3,
-  "desks": [
-    {"@id": "_:d11", "@type": ["Desk"],"row": 1, "column": 1},
-    {"@id": "_:d12", "@type": ["Desk"],"row": 1, "column": 2},
-    {"@id": "_:d13", "@type": ["Desk"],"row": 1, "column": 3},
-    {"@id": "_:d21", "@type": ["Desk"],"row": 2, "column": 1},
-    {"@id": "_:d22", "@type": ["Desk"],"row": 2, "column": 2},
-    {"@id": "_:d23", "@type": ["Desk"],"row": 2, "column": 3},
-    {"@id": "_:d32", "@type": ["Desk"],"row": 3, "column": 2}
-  ],
-  "enrollment": [
-    {
-      "@type": ["Student"],
-      "givenNames": [{
-        "annotation": "タロウ",
-        "nameToken": {"en": "Tarou", "ja": "太郎"}
-      }],
-      "familyNames": [{
-        "annotation": "ヤマダ",
-        "nameToken": {"en": "Yamada", "ja": "山田"}
-      }],
-      "atDesk": "_:d22"
-    },
-    {
-      "@type": ["Student"],
-      "givenNames": [{
-        "annotation": "ハナコ",
-        "nameToken": {"en": "Hanako", "ja": "花子"}
-      }],
-      "familyNames": [{
-        "annotation": "ヤマダ",
-        "nameToken": {"en": "Yamada", "ja": "山田"}
-      }],
-      "atDesk": "_:d13"
-    },
-    {
-      "@type": ["Student"],
-      "givenNames": [{
-        "annotation": "マリコ",
-        "nameToken": {"en": "Mariko", "ja": "まり子"}
-      }],
-      "familyNames": [{
-        "annotation": "スズキ",
-        "nameToken": {"en": "Suzuki", "ja": "鈴木"}
-      }],
-      "atDesk": "_:d21"
-    },
-    {
-      "@type": ["Student"],
-      "givenNames": [{
-        "annotation": "ユウ",
-        "nameToken": {"en": "Yuu", "ja": "ゆう"}
-      }],
-      "familyNames": [{
-        "annotation": "タナカ",
-        "nameToken": {"en": "Tanaka", "ja": "田中"}
-      }],
-      "atDesk": "_:d12"
-    },
-    {
-      "@type": ["Student"],
-      "givenNames": [{
-        "annotation": "ケンタロ",
-        "nameToken": {"en": "Kentaro", "ja": "健太郎"}
-      }],
-      "familyNames": [{
-        "annotation": "サトウ",
-        "nameToken": {"en": "Satou", "ja": "佐藤"}
-      }],
-      "atDesk": "_:d11"
-    }
-  ]
+  "deskAt": [[
+      {"@type": ["Desk"], "assignedTo":{
+         "@type": ["Student"],
+         "givenNames": [{
+           "annotation": "ケンタロ",
+           "nameToken": {"en": "Kentaro", "ja": "健太郎"}
+         }],
+         "familyNames": [{
+           "annotation": "サトウ",
+           "nameToken": {"en": "Satou", "ja": "佐藤"}
+         }],
+      }},
+      {"@type": ["Desk"], "assignedTo":{
+         "@type": ["Student"],
+         "givenNames": [{
+           "annotation": "ユウ",
+           "nameToken": {"en": "Yuu", "ja": "ゆう"}
+         }],
+         "familyNames": [{
+           "annotation": "タナカ",
+           "nameToken": {"en": "Tanaka", "ja": "田中"}
+         }],
+      }},
+      {"@type": ["Desk"], "assignedTo":{
+         "@type": ["Student"],
+         "givenNames": [{
+           "annotation": "ハナコ",
+           "nameToken": {"en": "Hanako", "ja": "花子"}
+         }],
+         "familyNames": [{
+           "annotation": "ヤマダ",
+           "nameToken": {"en": "Yamada", "ja": "山田"}
+         }],
+      }}
+   ], [
+      {"@type": ["Desk"], "assignedTo":{
+         "@type": ["Student"],
+         "givenNames": [{
+           "annotation": "マリコ",
+           "nameToken": {"en": "Mariko", "ja": "まり子"}
+         }],
+         "familyNames": [{
+           "annotation": "スズキ",
+           "nameToken": {"en": "Suzuki", "ja": "鈴木"}
+         }],
+      }},
+      {"@type": ["Desk"], "assignedTo":{
+         "@type": ["Student"],
+         "givenNames": [{
+            "annotation": "タロウ",
+            "nameToken": {"en": "Tarou", "ja": "太郎"}
+         }],
+         "familyNames": [{
+            "annotation": "ヤマダ",
+            "nameToken": {"en": "Yamada", "ja": "山田"}
+         }],
+      }},
+      {"@type": ["Desk"]}
+   ], [
+      {},
+      {"@type": ["Desk"]},
+      {}
+   ]],
 }
 ```
 
