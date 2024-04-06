@@ -269,6 +269,34 @@ const deskLayoutReducer = (layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanCha
   }
 }
 
+interface SeatingPlan {
+  deskAt: (DeskTemplate | {})[][]
+}
+
+type BlankNode = {
+  '@id': never | `_:$(string)`
+}
+
+type DeskTemplate = {
+  assignedTo?: StudentObj & BlankNode
+}
+
+const initialSeatingPlan: SeatingPlan = {
+  deskAt: [[]]
+}
+
+type SeatingPlanChange =
+| {type: 'initialize_seating_plan', students: StudentObj[], layout: DeskLayoutPlan}
+| {type: 'change_desk_layout'}
+
+const seatingStateReducer = (state: SeatingPlan, action: SeatingPlanChange): SeatingPlan => {
+  switch (action.type) {
+    case 'initialize_seating_plan': {
+
+    }
+  }
+  return state;
+}
 
 const Setup = () => {
   const [currentDialogStep, setCurrentDialogStep] = useState<number>(0)
@@ -276,6 +304,7 @@ const Setup = () => {
   const [newClassState, dispatchNewClassAction] = useReducer<(state: ClassroomState, action: ClassroomConfigAction) => ClassroomState>(newClassReducer, initialConfigState)
   const [newClassEnrollmentState, dispatchClassEnrollmentChange] = useReducer<(state: ClassEnrollmentState, action: ClassEnrollmentAction) => ClassEnrollmentState>(classEnrollmentReducer, initialClassEnrollmentState)
   const [deskLayoutPlan, dispatchLayoutChange] = useReducer<(layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanChange) => DeskLayoutPlan>(deskLayoutReducer, startingDeskLayoutPlan)
+  const [seatingPlanState, dispatchSeatingPlanChange] = useReducer<(state: SeatingPlan, action: SeatingPlanChange) => SeatingPlan>(seatingStateReducer, initialSeatingPlan)
 
   function getDeskLayout(deskLayoutCells: DeskGridCellProps[]): JSX.Element[] {
     const deskPlan: JSX.Element[] = []
