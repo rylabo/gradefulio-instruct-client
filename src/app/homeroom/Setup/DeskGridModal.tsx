@@ -53,21 +53,27 @@ const deskLayoutReducer = (layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanCha
 
     case 'change_intent_for_desk_layout_cell' :{
       const newLayoutPlan = {...layoutPlan}
+      const newDesks = layoutPlan.desks.map( (row : (DeskTemplate | {})[]) =>{
+        return row.map( (template: DeskTemplate | {}) => {
+          return {...template}
+        } )
+      })
       newLayoutPlan.deskLayout = {...layoutPlan.deskLayout}
       newLayoutPlan.desks = {...layoutPlan.desks}
       console.log(JSON.stringify(change, null, 2))
       switch (change.newIntent) {
         case 1:
-          newLayoutPlan.desks[change.templateRow][change.templateColumn] = {assign: false}
+          newDesks[change.templateRow][change.templateColumn] = {assign: false}
           break
         case 2:
-          newLayoutPlan.desks[change.templateRow][change.templateColumn] = {}
+          newDesks[change.templateRow][change.templateColumn] = {}
           break
         default: 
-          newLayoutPlan.desks[change.templateRow][change.templateColumn] = {assign: true}
+          newDesks[change.templateRow][change.templateColumn] = {assign: true}
           break
 
       }
+      newLayoutPlan.desks = newDesks
       return newLayoutPlan
     }
 
@@ -102,11 +108,18 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
     }
   }
 
+  function getCellUsage(deskCell: DeskTemplate | {}) : number {
+    let intent = 0
+    if (!('assign' in deskCell)) intent = 2
+    else if (deskCell.assign === false) intent = 1
+    return intent
+  }
+
   function getDeskLayout(desks: (DeskTemplate | {}) [][] ): JSX.Element[] {
     const deskPlan: JSX.Element[] = []
     for (let i = 0; i < desks.length; i++) {
       for (let j = 0; j < desks[i].length; j++) {
-        const intent = desks[i][j].hasOwnProperty('assign') ? 0 : 2 
+        const intent = getCellUsage(desks[i][j]) 
         deskPlan.push(
           <DeskGridCell 
             key={`${i}-${j}`}

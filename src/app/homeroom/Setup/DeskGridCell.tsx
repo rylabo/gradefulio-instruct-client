@@ -40,7 +40,15 @@ function DeskGridCell(
   ]
 
   const stateButtons = getDirectiveListItems(slotStates);
- 
+
+  function getDeskDescription(intent: number): string {
+    switch(intent) {
+      case 1: return 'Don\'t Assign'
+      case 2: return 'No Desk'
+      default: return 'Assign'
+    }
+  }
+  
   return (
     <Popover triggerType='listbox'>
       <PopoverTrigger className={`col-start-${column} row-start-${grid.rows - row + 1}`}>
@@ -48,7 +56,7 @@ function DeskGridCell(
           <CardBody>
             {intent}
             <br />
-            {intent!== 2 ? "desk" : "empty"}
+            {getDeskDescription(intent)}
           </CardBody>
         </Card>
       </PopoverTrigger>
