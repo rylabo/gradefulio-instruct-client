@@ -5,16 +5,11 @@ import SeatingGridSettings from './SeatingGridSettings'
 import DeskGridCell, { DeskGridCellProps } from './DeskGridCell'
 import { StudentObj } from '../../../lib/StudentObj'
 import { DeskLayout, DeskTemplate, GridSpec } from '../../../lib/SeatingPlan'
-import { getDefaultGridSpec, initializeDeskPlan } from '../../../util/deskLayout'
+import { deepCopyDeskLayout, getCellUsage, getDefaultGridSpec, initializeDeskPlan } from '../../../util/deskLayout'
 
 interface DeskLayoutPlan {
   deskLayout: GridSpec
   desks: (DeskTemplate | {})[][]
-}
-
-const startingDeskLayoutPlan: DeskLayoutPlan = {
-  deskLayout: {rows: 1, columns: 1},
-  desks: []
 }
 
 type DeskLayoutPlanChange =
@@ -53,11 +48,7 @@ const deskLayoutReducer = (layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanCha
 
     case 'change_intent_for_desk_layout_cell' :{
       const newLayoutPlan = {...layoutPlan}
-      const newDesks = layoutPlan.desks.map( (row : (DeskTemplate | {})[]) =>{
-        return row.map( (template: DeskTemplate | {}) => {
-          return {...template}
-        } )
-      })
+      const newDesks = deepCopyDeskLayout(layoutPlan.desks)
       newLayoutPlan.deskLayout = {...layoutPlan.deskLayout}
       newLayoutPlan.desks = {...layoutPlan.desks}
       console.log(JSON.stringify(change, null, 2))
@@ -101,18 +92,10 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
   }, [enrollment] )
 
   function handleChangeInDeskGridCellIntent(i: number, j: number) {
-    console.log('(' +i + ', ' + j+ ')')
     return (key:Key) => {
       // changeIntentForDeskCellLayout(i, j, Number(key))
       dispatchLayoutChange({type: 'change_intent_for_desk_layout_cell', templateRow: i, templateColumn: j, newIntent: Number(key)})
     }
-  }
-
-  function getCellUsage(deskCell: DeskTemplate | {}) : number {
-    let intent = 0
-    if (!('assign' in deskCell)) intent = 2
-    else if (deskCell.assign === false) intent = 1
-    return intent
   }
 
   function getDeskLayout(desks: (DeskTemplate | {}) [][] ): JSX.Element[] {
