@@ -40,7 +40,7 @@ interface ClassroomState {
   studentEnrollment: StudentObj[]
   deskRows: number
   deskColumns: number
-  deskAt: DeskTemplate[][]
+  deskAt: (DeskTemplate | {}) [][]
 }
 
 const initialConfigState: ClassroomState = {
@@ -134,31 +134,6 @@ const Setup = () => {
       <DeskGridModal isOpen={currentDialogStep === 2} size='5xl' deskRows={newClassState.deskRows} deskColumns={newClassState.deskColumns} enrollment={newClassState.studentEnrollment} desks={newClassState.deskAt}onLayoutFinalized={(layout: DeskLayout) => {
         dispatchNewClassAction({type: 'finalize_desk_layout', rows: layout.deskRows, columns: layout.deskColumns, desks: [...layout.deskAt]})
       }}></DeskGridModal>
-      {/* <Modal id='set-desk-layout' isOpen={currentDialogStep === 2} size='5xl'>
-        <ModalContent>
-          <ModalHeader>
-            Set Desk Layout
-          </ModalHeader>
-          <ModalBody>
-            <div className={`desk-plan grid gap-10 grid-rows-${deskLayoutPlan.deskLayout.rows} grid-cols-${deskLayoutPlan.deskLayout.columns}`}>
-              {getDeskLayout(deskLayoutPlan.deskLayoutCells)}
-            </div>
-            <SeatingGridSettings 
-              grid={deskLayoutPlan.deskLayout}
-              onRowCountChange={(newRowCount: number) => {dispatchLayoutChange({type: 'change_desk_layout_row_count', newRowCount: newRowCount})}}
-              onColumnCountChange={(newColumnCount: number) => {dispatchLayoutChange({type: 'change_desk_layout_column_count', newColumnCount: newColumnCount})}}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button color='primary'>
-              Next
-            </Button>
-            <Button>
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal> */}
       <Modal id='assign-seats' isOpen={currentDialogStep === 3} size='5xl'>
         <ModalContent>
           <ModalHeader>

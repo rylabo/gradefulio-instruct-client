@@ -23,7 +23,8 @@ export function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
 }
 
 export function isDeskTemplate(obj: DeskTemplate | {}): obj is DeskTemplate{
-  return 'assign' in obj
+  if (Object.keys(obj).length > 0) return 'assign' in obj
+  else return false
 }
 
 export function getCellUsage(deskCell: DeskTemplate | {}) : number {

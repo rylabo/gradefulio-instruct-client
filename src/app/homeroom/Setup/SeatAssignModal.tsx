@@ -1,4 +1,5 @@
 import React, { useEffect, useReducer } from 'react'
+import { Button, Card, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
 import { StudentObj } from '../../../lib/StudentObj'
 import { DeskTemplate } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, getCellUsage, isDeskTemplate } from '../../../util/deskLayout'
@@ -47,11 +48,9 @@ function getDefaultSeating(students: StudentObj[], desks: (DeskTemplate | {})[][
   const sS: StudentObj[] = sortStudents(students)
   for (let j = 0; j < newSeating[0].length; j++) {
     for (let i = 0; i < newSeating.length; i++) {
-      if (Object.keys(newSeating[i][j]).length > 0){
-        if (isDeskTemplate(newSeating[i][j])) {
-          newSeating[i][j] = sS[studentNumber]
-          studentNumber++
-        }  
+      if (isDeskTemplate(newSeating[i][j])) {
+        // newSeating[i][j].assignedTo = sS[studentNumber]
+        studentNumber++
       }
     }
   }
@@ -78,8 +77,38 @@ function SeatAssignModal({ students, desks } : AssignSeatProps) {
   useEffect(() => {
     dispatchAssignment({type: 'default_seating', students, desks})
   }, [students, desks])
+
+// function getDesksDisplay(desks: (DeskTemplate | {})[][]): JSX.Element[] {
+//   const deskDisplay: JSX.Element[] = []
+//     for (let i = 0; i < desks.length; i++){
+//       for (let j = 0; j < desks.length; j++) {
+//           if (isDeskTemplate(desks[i][j])){
+//             // if(desks[i][j].assignedTo)
+//             const deskCard: JSX.Element = (<Card key={'desk [' + i + ', ' + j + ']'}></Card>) 
+//             if (){
+
+//             }
+//           }  
+//       }
+//     }
+//   return deskDisplay
+// }
+
   return (
-    <div>SeatAssignModal</div>
+    <Modal>
+      <ModalHeader>
+      </ModalHeader>
+      <ModalBody >
+        <div className={`desk-plan grid gap-10 grid-rows-${seating.desks.length} grid-cols-${seating.desks[0].length}`}>
+
+        </div>
+        <div>
+
+        </div>
+      </ModalBody>
+      <ModalFooter>
+      </ModalFooter>
+    </Modal>
   )
 }
 
