@@ -6,9 +6,10 @@ import DeskGridCell, { DeskGridCellProps } from './DeskGridCell';
 // import SeatingPlan from './SeatingPlan';
 import { read, utils } from 'xlsx';
 import NewStudentModal from './NewStudentModal';
-import { DeskLayout, DeskTemplate, GridSpec, SeatingPlan } from '../../../lib/SeatingPlan';
+import { BlankNode, DeskLayout, DeskTemplate, GridSpec, SeatingPlan } from '../../../lib/SeatingPlan';
 import DeskGridModal from './DeskGridModal';
 import { getDefaultGridSpec, initializeDeskPlan } from '../../../util/deskLayout';
+import SeatAssignModal from './SeatAssignModal';
 
 type Name = 
   | {
@@ -37,7 +38,7 @@ interface ClassroomState {
   className: Name
   gradeLevel: SchoolGrade
   classNumber: number | undefined
-  studentEnrollment: StudentObj[]
+  studentEnrollment: (StudentObj & BlankNode)[]
   deskRows: number
   deskColumns: number
   deskAt: (DeskTemplate | {}) [][]
@@ -54,14 +55,14 @@ const initialConfigState: ClassroomState = {
   studentEnrollment: [],
   deskRows: 1,
   deskColumns: 1,
-  deskAt: []
+  deskAt: [[]]
 }
 
 type ClassroomConfigAction =
   | {type: 'create_class_roll'; gradeLevel: string; }
   | {type: 'cancel_configuration'}
-  | {type: 'finalize_desk_layout'; rows: number, columns: number, desks: DeskTemplate[][]}
-  | {type: 'finalize_student_list'; newStudents: StudentObj[]}
+  | {type: 'finalize_desk_layout'; rows: number, columns: number, desks: (DeskTemplate | {})[][]}
+  | {type: 'finalize_student_list'; newStudents: (StudentObj & BlankNode)[]}
 
 
 const newClassReducer = (state: ClassroomState, action: ClassroomConfigAction): ClassroomState => {
@@ -123,7 +124,7 @@ const Setup = () => {
     
   }
 
-  function enrollmentFinalizedHandler(enrollment: StudentObj[]) {
+  function enrollmentFinalizedHandler(enrollment: (StudentObj & BlankNode)[]) {
     dispatchNewClassAction({type:'finalize_student_list', newStudents: enrollment})
     setCurrentDialogStep(2)
   }
@@ -131,18 +132,21 @@ const Setup = () => {
   return (
     <>
       <NewStudentModal isOpen={currentDialogStep === 1} size='5xl' onEnrollmentFinalized={enrollmentFinalizedHandler}></NewStudentModal>
-      <DeskGridModal isOpen={currentDialogStep === 2} size='5xl' deskRows={newClassState.deskRows} deskColumns={newClassState.deskColumns} enrollment={newClassState.studentEnrollment} desks={newClassState.deskAt}onLayoutFinalized={(layout: DeskLayout) => {
+      <DeskGridModal isOpen={currentDialogStep === 2} size='5xl' deskRows={newClassState.deskRows} deskColumns={newClassState.deskColumns} enrollment={newClassState.studentEnrollment} desks={newClassState.deskAt} onLayoutFinalized={(layout: DeskLayout) => {
         dispatchNewClassAction({type: 'finalize_desk_layout', rows: layout.deskRows, columns: layout.deskColumns, desks: [...layout.deskAt]})
+        setCurrentDialogStep(3)
       }}></DeskGridModal>
-      <Modal id='assign-seats' isOpen={currentDialogStep === 3} size='5xl'>
+      <SeatAssignModal isOpen={currentDialogStep === 3} size='5xl' students={newClassState.studentEnrollment} desks={newClassState.deskAt} >
+      </SeatAssignModal>
+      {/* <Modal id='assign-seats' isOpen={currentDialogStep === 3} size='5xl'>
         <ModalContent>
           <ModalHeader>
             Assign Seats
           </ModalHeader>
           <ModalBody>
-            {/* <div className={`desk-plan grid gap-10 grid-rows-${newClassState.deskLayout.rows} grid-cols-${newClassState.deskLayout.columns}`}>
+            <div className={`desk-plan grid gap-10 grid-rows-${newClassState.deskLayout.rows} grid-cols-${newClassState.deskLayout.columns}`}>
               <SeatingPlan students={newClassState.studentEnrollment} deskSlots={newClassState.deskLayoutCells} seatingGrid={newClassState.deskLayout}></SeatingPlan>
-            </div> */}
+            </div>
           </ModalBody>
           <ModalFooter>
             <Button color='primary'>
@@ -153,7 +157,7 @@ const Setup = () => {
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Modal> */}
       <Button onPress={() => {setCurrentDialogStep(1)}}>
         New Class
       </Button>

@@ -2,6 +2,7 @@ import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader
 import React, { useReducer } from 'react'
 import { StudentObj } from '../../../lib/StudentObj';
 import { read, utils } from 'xlsx';
+import { BlankNode } from '../../../lib/SeatingPlan';
 
 interface NewStudentListItem {
   '姓': string
@@ -13,11 +14,11 @@ interface NewStudentListItem {
 }
 
 interface ClassEnrollmentState {
-  newStudents: StudentObj[]
+  newStudents: (StudentObj & BlankNode)[]
 }
 
 type ClassEnrollmentAction = 
-  | {type: 'add_new_students_from_spreadsheet'; newStudents: StudentObj[]}
+  | {type: 'add_new_students_from_spreadsheet'; newStudents: (StudentObj & BlankNode)[]}
   | {type: 'update_new_student_family_name'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_katakana'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_romaji'; newStudentArrayindex: number; newValue: string }
@@ -82,6 +83,7 @@ const classEnrollmentReducer = (state: ClassEnrollmentState, action: ClassEnroll
       }   
 
   }
+
 }
 
 const initialClassEnrollmentState: ClassEnrollmentState = {
@@ -92,14 +94,14 @@ const initialClassEnrollmentState: ClassEnrollmentState = {
 interface NewStudentModalProps {
   isOpen: boolean
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
-  onEnrollmentFinalized: (enrollment: StudentObj[]) => void
+  onEnrollmentFinalized: (enrollment: (StudentObj & BlankNode)[]) => void 
 }
 
-function readStudentListFile(file: ArrayBuffer | undefined): StudentObj[] {
+function readStudentListFile(file: ArrayBuffer | undefined): (StudentObj & BlankNode)[] {
   const wb = read(file)
   const ws = wb.Sheets[wb.SheetNames[0]]
   const data: NewStudentListItem[] = utils.sheet_to_json<NewStudentListItem>(ws)
-  const spreadsheetStudentList: StudentObj[] = data.map((item: NewStudentListItem) => {
+  const spreadsheetStudentList: (StudentObj & BlankNode)[] = data.map((item: NewStudentListItem) => {
     return {
       "@type": [
         "Student"

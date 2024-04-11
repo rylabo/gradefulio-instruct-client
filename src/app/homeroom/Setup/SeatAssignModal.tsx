@@ -1,11 +1,13 @@
 import React, { useEffect, useReducer } from 'react'
-import { Button, Card, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
+import { Button, Card, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
 import { StudentObj } from '../../../lib/StudentObj'
-import { DeskTemplate } from '../../../lib/SeatingPlan'
+import { DeskTemplate, BlankNode } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, getCellUsage, isDeskTemplate } from '../../../util/deskLayout'
 
 interface AssignSeatProps {
-  students: StudentObj[]
+  isOpen: boolean
+  size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
+  students: (StudentObj & BlankNode) []
   desks: (DeskTemplate | {})[][]
 }
 
@@ -14,7 +16,7 @@ interface SeatingAssignment {
 }
 
 type AssignAction = 
-  | {type: 'default_seating', students: StudentObj[], desks: (DeskTemplate | {})[][]}
+  | {type: 'default_seating', students: (StudentObj & BlankNode) [], desks: (DeskTemplate | {})[][]}
 
 
 function compareStudents(a: StudentObj, b: StudentObj): number {
@@ -38,18 +40,19 @@ function compareStudents(a: StudentObj, b: StudentObj): number {
   return 0
 }
 
-function sortStudents(students: StudentObj[]): StudentObj[] {
+function sortStudents(students: (StudentObj & BlankNode) []): (StudentObj & BlankNode) [] {
   return students.toSorted(compareStudents)
 }
 
-function getDefaultSeating(students: StudentObj[], desks: (DeskTemplate | {})[][]): (DeskTemplate | {})[][] {
+function getDefaultSeating(students: (StudentObj & BlankNode) [], desks: (DeskTemplate | {})[][]): (DeskTemplate | {})[][] {
   let studentNumber: number = 0
   const newSeating: (DeskTemplate | {})[][] = deepCopyDeskLayout(desks)
-  const sS: StudentObj[] = sortStudents(students)
+  const sS: (StudentObj & BlankNode) [] = sortStudents(students)
   for (let j = 0; j < newSeating[0].length; j++) {
     for (let i = 0; i < newSeating.length; i++) {
-      if (isDeskTemplate(newSeating[i][j])) {
-        // newSeating[i][j].assignedTo = sS[studentNumber]
+      const obj: DeskTemplate | {} = newSeating[i][j]
+      if (isDeskTemplate(obj) && obj.assign) {
+          obj.assignedTo = sS[studentNumber]
         studentNumber++
       }
     }
@@ -71,43 +74,52 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
   }
 }
 
-function SeatAssignModal({ students, desks } : AssignSeatProps) {
+function SeatAssignModal({ isOpen, size, students, desks } : AssignSeatProps) {
   const [seating, dispatchAssignment] = useReducer<(seating: SeatingAssignment, action: AssignAction) => SeatingAssignment>(seatingReducer, {desks: desks})
 
   useEffect(() => {
     dispatchAssignment({type: 'default_seating', students, desks})
   }, [students, desks])
 
-// function getDesksDisplay(desks: (DeskTemplate | {})[][]): JSX.Element[] {
-//   const deskDisplay: JSX.Element[] = []
-//     for (let i = 0; i < desks.length; i++){
-//       for (let j = 0; j < desks.length; j++) {
-//           if (isDeskTemplate(desks[i][j])){
-//             // if(desks[i][j].assignedTo)
-//             const deskCard: JSX.Element = (<Card key={'desk [' + i + ', ' + j + ']'}></Card>) 
-//             if (){
-
-//             }
-//           }  
-//       }
-//     }
-//   return deskDisplay
-// }
+function getDesksDisplay(desks: (DeskTemplate | {})[][]): JSX.Element[] {
+  const deskDisplay: JSX.Element[] = []
+    for (let i = 0; i < desks.length; i++){
+      for (let j = 0; j < desks[0].length; j++) {
+        const template: DeskTemplate | {} = desks[i][j]
+          if (isDeskTemplate(template)){
+            if(template.assignedTo){
+              deskDisplay.push((<Card key={'desk [' + i + ', ' + j + ']' } className={`col-start-${j + 1} row-start-${desks.length - i}`}>
+              <Chip draggable>{template.assignedTo.familyNames[0].nameToken.ja}　{template.assignedTo.givenNames[0].nameToken.ja}</Chip>
+              </Card>))
+            }
+            else {
+              deskDisplay.push((<Card key={'desk [' + i + ', ' + j + ']'}  className={`col-start-${j + 1} row-start-${desks.length - i}`}>
+              </Card>))
+            }
+            }
+          }  
+      }
+    
+  return deskDisplay
+}
 
   return (
-    <Modal>
-      <ModalHeader>
-      </ModalHeader>
-      <ModalBody >
-        <div className={`desk-plan grid gap-10 grid-rows-${seating.desks.length} grid-cols-${seating.desks[0].length}`}>
-
-        </div>
-        <div>
-
-        </div>
-      </ModalBody>
-      <ModalFooter>
-      </ModalFooter>
+    <Modal id='assign-desks' isOpen={isOpen} size={size}>
+      <ModalContent>
+        <ModalHeader>
+          Assign Desks
+        </ModalHeader>
+        <ModalBody >
+          <div className={`desk-plan grid gap-10 grid-rows-${seating.desks.length} grid-cols-${seating.desks[0].length}`}>
+            {getDesksDisplay(seating.desks)}
+          </div>
+          <div>
+            {/* staging area for students not assigned desks */}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+        </ModalFooter>
+      </ModalContent>
     </Modal>
   )
 }

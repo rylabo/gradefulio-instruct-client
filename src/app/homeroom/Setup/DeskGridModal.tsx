@@ -135,7 +135,7 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
           />
         </ModalBody>
         <ModalFooter>
-          <Button color='primary'>
+          <Button color='primary' onPress={() => {onLayoutFinalized({deskRows: deskLayoutPlan.deskLayout.rows, deskColumns: deskLayoutPlan.deskLayout.columns, deskAt: deskLayoutPlan.desks} )}}>
             Next
           </Button>
           <Button>

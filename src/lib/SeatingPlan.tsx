@@ -10,7 +10,7 @@ export interface SeatingPlan {
 }
 
 export type BlankNode = {
-  '@id': never | `_:$(string)`
+  '@id'?: `_:$(string)`
 }
 
 export type DeskTemplate = {
@@ -21,5 +21,5 @@ export type DeskTemplate = {
 export interface DeskLayout {
   deskRows: number
   deskColumns: number
-  deskAt: DeskTemplate[][]
+  deskAt: (DeskTemplate | {})[][]
 }
