@@ -1,8 +1,7 @@
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
 import React, { useReducer } from 'react'
-import { StudentObj } from '../../../lib/StudentObj';
+import { NewStudent } from '../../../lib/StudentObj';
 import { read, utils } from 'xlsx';
-import { BlankNode } from '../../../lib/SeatingPlan';
 
 interface NewStudentListItem {
   '姓': string
@@ -14,11 +13,11 @@ interface NewStudentListItem {
 }
 
 interface ClassEnrollmentState {
-  newStudents: (StudentObj & BlankNode)[]
+  newStudents: (NewStudent)[]
 }
 
 type ClassEnrollmentAction = 
-  | {type: 'add_new_students_from_spreadsheet'; newStudents: (StudentObj & BlankNode)[]}
+  | {type: 'add_new_students_from_spreadsheet'; newStudents: (NewStudent)[]}
   | {type: 'update_new_student_family_name'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_katakana'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_romaji'; newStudentArrayindex: number; newValue: string }
@@ -94,14 +93,14 @@ const initialClassEnrollmentState: ClassEnrollmentState = {
 interface NewStudentModalProps {
   isOpen: boolean
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
-  onEnrollmentFinalized: (enrollment: (StudentObj & BlankNode)[]) => void 
+  onEnrollmentFinalized: (enrollment: (NewStudent)[]) => void 
 }
 
-function readStudentListFile(file: ArrayBuffer | undefined): (StudentObj & BlankNode)[] {
+function readStudentListFile(file: ArrayBuffer | undefined): (NewStudent)[] {
   const wb = read(file)
   const ws = wb.Sheets[wb.SheetNames[0]]
   const data: NewStudentListItem[] = utils.sheet_to_json<NewStudentListItem>(ws)
-  const spreadsheetStudentList: (StudentObj & BlankNode)[] = data.map((item: NewStudentListItem) => {
+  const spreadsheetStudentList: (NewStudent)[] = data.map((item: NewStudentListItem) => {
     return {
       "@type": [
         "Student"
@@ -132,7 +131,7 @@ function readStudentListFile(file: ArrayBuffer | undefined): (StudentObj & Blank
 function NewStudentModal({isOpen, size, onEnrollmentFinalized}: NewStudentModalProps) {
   const [newClassEnrollmentState, dispatchClassEnrollmentChange] = useReducer<(state: ClassEnrollmentState, action: ClassEnrollmentAction) => ClassEnrollmentState>(classEnrollmentReducer, initialClassEnrollmentState)
 
-  function getNewStudentFormGroups(newStudents: StudentObj[]): JSX.Element[] {
+  function getNewStudentFormGroups(newStudents: NewStudent[]): JSX.Element[] {
     const formGroups: JSX.Element[] = []
     for (let i = 0; i < newStudents.length; i++) {
       formGroups.push((

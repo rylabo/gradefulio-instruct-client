@@ -1,4 +1,4 @@
-import { StudentObj } from "./StudentObj"
+import { Student, StudentObj } from "./StudentObj"
 
 export interface GridSpec {
   rows: number
@@ -13,8 +13,12 @@ export type BlankNode = {
   '@id'?: `_:$(string)`
 }
 
+export type IdentifiedNode = {
+  '@id': string
+}
+
 export type DeskTemplate = {
-  assignedTo?: StudentObj & BlankNode
+  assignedTo?: Student
   assign: boolean
 }
 
