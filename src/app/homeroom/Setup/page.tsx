@@ -1,10 +1,7 @@
 'use client';
-import React, { useState, DragEvent, ChangeEvent, useReducer, Key } from 'react'
+import React, { useState, DragEvent, useReducer } from 'react'
 import { StudentObj } from '../../../lib/StudentObj';
-import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react';
-import DeskGridCell, { DeskGridCellProps } from './DeskGridCell';
-// import SeatingPlan from './SeatingPlan';
-import { read, utils } from 'xlsx';
+import { Button } from '@nextui-org/react';
 import NewStudentModal from './NewStudentModal';
 import { BlankNode, DeskLayout, DeskTemplate, GridSpec, SeatingPlan } from '../../../lib/SeatingPlan';
 import DeskGridModal from './DeskGridModal';

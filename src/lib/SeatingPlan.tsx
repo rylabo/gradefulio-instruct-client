@@ -19,7 +19,9 @@ export type IdentifiedNode = {
 
 export type DeskTemplate = {
   assignedTo?: Student
+  studentIndex?: number
   assign: boolean
+  assignmentConfirmed: boolean
 }
 
 export interface DeskLayout {
