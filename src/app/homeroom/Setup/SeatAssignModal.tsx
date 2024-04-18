@@ -121,8 +121,8 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
     case 'default_seating': {
       return {
         desks: getDefaultSeating(action.students, action.desks),
-        students: seating.students,
-        unassignedStudents: seating.unassignedStudents
+        students: action.students,
+        unassignedStudents: []
       } 
     }
 
@@ -313,13 +313,14 @@ function SeatAssignModal({ isOpen, size, students, desks } : AssignSeatProps) {
         for (let rowIndex = 0; rowIndex < desks.length; rowIndex++){
           const template: DeskTemplate | {} = desks[rowIndex][colIndex]
           if (isDeskTemplate(template)){
-            if(template.assignedTo && template.studentIndex){
+            if(template.assignedTo && template.studentIndex !== undefined){
               deskDisplay.push((
               <Card 
                 key={'desk [' + rowIndex + ', ' + colIndex + ']' }
-                className={`col-start-${colIndex + 1} row-start-${desks.length - rowIndex}`}
-                onDragOver={handleDragOverDesk(rowIndex, colIndex, template.studentIndex)}
+                className={`col-start-${colIndex + 1} row-start-${desks.length - rowIndex} min-h-32`}
+                onDragEnter={handleDragOverDesk(rowIndex, colIndex, template.studentIndex)}
                 onDragLeave={handleDragOutOfDesk()}
+                style={{minHeight: 128}}
               >
                 <Chip
                   draggable
@@ -335,8 +336,9 @@ function SeatAssignModal({ isOpen, size, students, desks } : AssignSeatProps) {
               <Card 
                 key={'desk [' + rowIndex + ', ' + colIndex + ']'}
                 className={`col-start-${colIndex + 1} row-start-${desks.length - rowIndex}`}
-                onDragOver={handleDragOverDesk(rowIndex, colIndex, template.studentIndex)}
+                onDragEnter={handleDragOverDesk(rowIndex, colIndex, template.studentIndex)}
                 onDragLeave={handleDragOutOfDesk()}
+                style={{minHeight: 128}}
               >
               </Card>))
             }
