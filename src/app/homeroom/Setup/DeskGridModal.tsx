@@ -84,9 +84,10 @@ interface DeskGridModalProps {
   desks: (DeskTemplate | {})[][]
   onBackPressed?: () => void
   onNextPressed: (students: Student[], layout: DeskLayout) => void
+  onCancel: () => void
 }
 
-function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, onNextPressed, onBackPressed }: DeskGridModalProps) {
+function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, onNextPressed, onBackPressed, onCancel }: DeskGridModalProps) {
   const [deskLayoutPlan, dispatchLayoutChange] = useReducer<(layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanChange) => DeskLayoutPlan>(deskLayoutReducer, {deskLayout: {rows: deskRows, columns: deskColumns}, desks: desks})
   useEffect(() => {
     dispatchLayoutChange({type: 'find_initial_desk_layout' , studentList: enrollment})
@@ -120,7 +121,7 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
   }
 
   return (
-    <Modal id='set-desk-layout' isOpen={isOpen} size={size}>
+    <Modal id='set-desk-layout' isOpen={isOpen} size={size} onClose={onCancel}>
       <ModalContent>
         <ModalHeader>
           Set Desk Layout
@@ -150,7 +151,7 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
           }}>
             Next
           </Button>
-          <Button color='danger'>
+          <Button color='danger' onPress={() => onCancel()}>
             Cancel
           </Button>
         </ModalFooter>
