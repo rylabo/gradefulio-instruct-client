@@ -1,6 +1,6 @@
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
-import React, { useReducer } from 'react'
-import { NewStudent } from '../../../lib/StudentObj';
+import React, { useEffect, useReducer } from 'react'
+import { NewStudent, Student } from '../../../lib/StudentObj';
 import { read, utils } from 'xlsx';
 
 interface NewStudentListItem {
@@ -18,6 +18,7 @@ interface ClassEnrollmentState {
 
 type ClassEnrollmentAction = 
   | {type: 'add_new_students_from_spreadsheet'; newStudents: (NewStudent)[]}
+  | {type: 'initialize_new_students'; newStudents: (NewStudent)[]}
   | {type: 'update_new_student_family_name'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_katakana'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_romaji'; newStudentArrayindex: number; newValue: string }
@@ -28,12 +29,19 @@ type ClassEnrollmentAction =
 
 const classEnrollmentReducer = (state: ClassEnrollmentState, action: ClassEnrollmentAction): ClassEnrollmentState => {
   switch (action.type) {
-    case 'add_new_students_from_spreadsheet':
-      return {
-        ...state,
-        newStudents: action.newStudents,
-      }
+    case 'add_new_students_from_spreadsheet': {
+      const newState: ClassEnrollmentState = {...state}
+      newState.newStudents= action.newStudents      
+      return newState
+    }
 
+    case 'initialize_new_students': {
+      const newState: ClassEnrollmentState = {...state}
+      newState.newStudents= action.newStudents      
+      return newState
+    }
+
+    
     case 'update_new_student_family_name': {
       const newState = {...state};
       newState.newStudents[action.newStudentArrayindex].familyNames[0].nameToken.ja = action.newValue;
@@ -93,7 +101,9 @@ const initialClassEnrollmentState: ClassEnrollmentState = {
 interface NewStudentModalProps {
   isOpen: boolean
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
-  onNextPressed: (enrollment: (NewStudent)[]) => void 
+  enrollment: NewStudent[]
+  onNextPressed: (enrollment: (NewStudent)[]) => void
+  onCancel: () => void 
 }
 
 function readStudentListFile(file: ArrayBuffer | undefined): (NewStudent)[] {
@@ -128,8 +138,13 @@ function readStudentListFile(file: ArrayBuffer | undefined): (NewStudent)[] {
   return spreadsheetStudentList
 }
 
-function NewStudentModal({isOpen, size, onNextPressed: onEnrollmentFinalized}: NewStudentModalProps) {
+function NewStudentModal({isOpen, size, enrollment, onNextPressed, onCancel}: NewStudentModalProps) {
   const [newClassEnrollmentState, dispatchClassEnrollmentChange] = useReducer<(state: ClassEnrollmentState, action: ClassEnrollmentAction) => ClassEnrollmentState>(classEnrollmentReducer, initialClassEnrollmentState)
+
+  useEffect(() => {
+    dispatchClassEnrollmentChange({type: 'initialize_new_students' , newStudents: enrollment})
+  }, [enrollment] )
+
 
   function getNewStudentFormGroups(newStudents: NewStudent[]): JSX.Element[] {
     const formGroups: JSX.Element[] = []
@@ -180,7 +195,7 @@ function NewStudentModal({isOpen, size, onNextPressed: onEnrollmentFinalized}: N
   }
 
   return (
-    <Modal id='add-new-students' isOpen={isOpen} size={size}>
+    <Modal id='add-new-students' isOpen={isOpen} size={size} onClose={onCancel}>
       <ModalContent>
         <ModalHeader>
           Create a New Class
@@ -202,11 +217,11 @@ function NewStudentModal({isOpen, size, onNextPressed: onEnrollmentFinalized}: N
           <Button 
             color='primary'
             isDisabled={newClassEnrollmentState.newStudents.length === 0}
-            onPress={() => {onEnrollmentFinalized(newClassEnrollmentState.newStudents)}}
+            onPress={() => {onNextPressed(newClassEnrollmentState.newStudents)}}
           >
             Next
           </Button>
-          <Button>
+          <Button color='danger' onPress={() => onCancel()}>
             Cancel
           </Button>
         </ModalFooter>

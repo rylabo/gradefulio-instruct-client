@@ -174,12 +174,19 @@ const NewCourseDialog = () => {
     setCurrentDialogStep(0)
   }
   
+  function cancelHandler(): void {
+    dispatchNewClassAction({type: 'cancel_configuration'})
+    setCurrentDialogStep(0)
+  }
+
   return (
     <>
       <NewCourseDialog.NewStudentModal
         isOpen={currentDialogStep === 1}
         size='5xl'
         onNextPressed={enrollmentFinalizedHandler}
+        enrollment={newClassState.studentEnrollment}
+        onCancel={cancelHandler}
       />
       <NewCourseDialog.DeskGridModal
         isOpen={currentDialogStep === 2}
@@ -190,6 +197,7 @@ const NewCourseDialog = () => {
         desks={newClassState.deskAt}
         onBackPressed={deskGridModalPreviousHandler}
         onNextPressed={deskGridModalNextHandler}
+        onCancel={cancelHandler}
       />
       <NewCourseDialog.SeatAssignModal
         isOpen={currentDialogStep === 3}
@@ -198,6 +206,7 @@ const NewCourseDialog = () => {
         desks={seatingPlanState.deskAt}
         onBackPressed={seatAssignModalPreviousHandler}
         onFinishPressed={seatAssignModalProceedHandler}
+        onCancel={cancelHandler}
       />
       <Button onPress={() => {setCurrentDialogStep(1)}}>
         New Class
