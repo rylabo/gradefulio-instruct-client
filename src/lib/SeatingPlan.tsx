@@ -6,6 +6,7 @@ export interface GridSpec {
 }
 
 export interface SeatingPlan {
+  students: Student[]
   deskAt: (DeskTemplate | {})[][]
 }
 

@@ -3,7 +3,7 @@ import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from
 import React, { Key, useEffect, useReducer } from 'react'
 import SeatingGridSettings from './SeatingGridSettings'
 import DeskGridCell, { DeskGridCellProps } from './DeskGridCell'
-import { StudentObj } from '../../../lib/StudentObj'
+import { Student, StudentObj } from '../../../lib/StudentObj'
 import { DeskLayout, DeskTemplate, GridSpec } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, getCellUsage, getDefaultGridSpec, initializeDeskPlan } from '../../../util/deskLayout'
 
@@ -82,10 +82,11 @@ interface DeskGridModalProps {
   deskColumns: number
   enrollment: StudentObj[]
   desks: (DeskTemplate | {})[][]
-  onLayoutFinalized: (layout: DeskLayout) => void
+  onBackPressed?: () => void
+  onNextPressed: (students: Student[], layout: DeskLayout) => void
 }
 
-function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, onLayoutFinalized}: DeskGridModalProps) {
+function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, onNextPressed, onBackPressed }: DeskGridModalProps) {
   const [deskLayoutPlan, dispatchLayoutChange] = useReducer<(layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanChange) => DeskLayoutPlan>(deskLayoutReducer, {deskLayout: {rows: deskRows, columns: deskColumns}, desks: desks})
   useEffect(() => {
     dispatchLayoutChange({type: 'find_initial_desk_layout' , studentList: enrollment})
@@ -135,10 +136,21 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
           />
         </ModalBody>
         <ModalFooter>
-          <Button color='primary' onPress={() => {onLayoutFinalized({deskRows: deskLayoutPlan.deskLayout.rows, deskColumns: deskLayoutPlan.deskLayout.columns, deskAt: deskLayoutPlan.desks} )}}>
+          {
+            onBackPressed ?
+              <Button color='primary' onPress={() => {
+                onBackPressed()
+              }}>
+                Back
+              </Button>
+            : undefined
+          }
+          <Button color='primary' onPress={() => {
+            onNextPressed(enrollment ,{deskRows: deskLayoutPlan.deskLayout.rows, deskColumns: deskLayoutPlan.deskLayout.columns, deskAt: deskLayoutPlan.desks} )
+          }}>
             Next
           </Button>
-          <Button>
+          <Button color='danger'>
             Cancel
           </Button>
         </ModalFooter>

@@ -93,7 +93,7 @@ const initialClassEnrollmentState: ClassEnrollmentState = {
 interface NewStudentModalProps {
   isOpen: boolean
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
-  onEnrollmentFinalized: (enrollment: (NewStudent)[]) => void 
+  onNextPressed: (enrollment: (NewStudent)[]) => void 
 }
 
 function readStudentListFile(file: ArrayBuffer | undefined): (NewStudent)[] {
@@ -128,7 +128,7 @@ function readStudentListFile(file: ArrayBuffer | undefined): (NewStudent)[] {
   return spreadsheetStudentList
 }
 
-function NewStudentModal({isOpen, size, onEnrollmentFinalized}: NewStudentModalProps) {
+function NewStudentModal({isOpen, size, onNextPressed: onEnrollmentFinalized}: NewStudentModalProps) {
   const [newClassEnrollmentState, dispatchClassEnrollmentChange] = useReducer<(state: ClassEnrollmentState, action: ClassEnrollmentAction) => ClassEnrollmentState>(classEnrollmentReducer, initialClassEnrollmentState)
 
   function getNewStudentFormGroups(newStudents: NewStudent[]): JSX.Element[] {
