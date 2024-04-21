@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useRef } from 'react'
 import { Button, Card, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
-import { Student } from '../../../lib/StudentObj'
-import { DeskTemplate } from '../../../lib/SeatingPlan'
+import { insertSort, sortStudents, Student } from '../../../lib/StudentObj'
+import { DeskLayout, DeskTemplate, SeatingPlan } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, getCellUsage, isDeskTemplate } from '../../../util/deskLayout'
 import { assert } from 'console'
 
@@ -10,6 +10,8 @@ interface AssignSeatProps {
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
   students: Student []
   desks: (DeskTemplate | {})[][]
+  onBackPressed?: () => void
+  onFinishPressed: (seatingPlan: SeatingPlan) => void
 }
 
 interface SeatingAssignment {
@@ -49,53 +51,6 @@ type AssignAction =
   | { type: 'move_over_unnassigned_area', unnassignedStudentsIndex: number }
   | { type: 'move_outside_unnassigned_area' }
   | { type: 'move_finalize' }
-
-
-function nameCompareStudents(a: Student, b:Student): number {
-  if (a.familyNames[0].annotation > b.familyNames[0].annotation) return 1
-  else if (a.familyNames[0].annotation < b.familyNames[0].annotation) return -1
-  else if (a.givenNames[0].annotation > b.givenNames[0].annotation) return 1  
-  else if (a.givenNames[0].annotation < b.givenNames[0].annotation) return -1
-  else if (a.familyNames[0].nameToken.ja > b.familyNames[0].nameToken.ja) return 1
-  else if (a.givenNames[0].nameToken.ja < b.givenNames[0].nameToken.ja) return -1
-  else if (a.givenNames[0].nameToken.ja > b.givenNames[0].nameToken.ja) return 1
-  return 0
-}
-  
-function insertSort(student: Student, array: Student[]): [number, Student[]] {
-
-  // find the index
-  const newArray: Student[] = {...array}
-  let index: number = 0
-  while (index < newArray.length && nameCompareStudents(student, newArray[index]) <= 0) index++
-
-  // insert at index there
-  newArray.splice(index, 0, student)
-  return [index, newArray]
-}
-
-function compareStudents(a: Student, b: Student): number {
-
-  // attendance numbers before names.
-  if (!a.attendanceNumber && b.attendanceNumber) return 1
-  else if (a.attendanceNumber && !b.attendanceNumber) return -1
-
-  else if (a.attendanceNumber && b.attendanceNumber) {
-    if (a.attendanceNumber > b.attendanceNumber) return 1
-    else if (a.attendanceNumber < b.attendanceNumber) return -1
-    else return 0
-  }
-
-  else return nameCompareStudents(a, b)
-}
-
-function sortStudents(students: Student[]): Student[] {
-  return students.toSorted(compareStudents)
-}
-
-function nameSortStudents(students: Student[]): Student[] {
-  return students.toSorted(nameCompareStudents)
-}
 
 function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]): (DeskTemplate | {})[][] {
   let studentNumber: number = 0
@@ -299,12 +254,12 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
 }
 
 
-function SeatAssignModal({ isOpen, size, students, desks } : AssignSeatProps) {
+function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinishPressed } : AssignSeatProps) {
   const [seating, dispatchAssignment] = useReducer<(seating: SeatingAssignment, action: AssignAction) => SeatingAssignment>(seatingReducer, {desks: desks, unassignedStudents: [], students: students})
 
   useEffect(() => {
     dispatchAssignment({type: 'default_seating', students: sortStudents(students), desks: desks})
-  }, [students, desks])
+  }, [desks])
 
   function getDesksDisplay(desks: (DeskTemplate | {})[][]): JSX.Element[] {
     const deskDisplay: JSX.Element[] = []
@@ -407,6 +362,26 @@ function SeatAssignModal({ isOpen, size, students, desks } : AssignSeatProps) {
           </div>
         </ModalBody>
         <ModalFooter>
+          {
+            onBackPressed ?
+              <Button color='primary' onPress={() => {
+                onBackPressed()
+              }}>
+                Back
+              </Button>
+            : undefined
+          }
+          <Button color='primary' onPress={() => {
+            onFinishPressed({
+              students: seating.students,
+              deskAt: seating.desks
+            })
+          }}>
+            Finish
+          </Button>
+          <Button color='danger'>
+            Cancel
+          </Button>
         </ModalFooter>
 
       </ModalContent>

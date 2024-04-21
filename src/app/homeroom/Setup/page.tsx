@@ -1,11 +1,11 @@
 'use client';
 import React, { useState, DragEvent, useReducer } from 'react'
-import { StudentObj } from '../../../lib/StudentObj';
+import { NewStudent, sortStudents, Student, StudentObj } from '../../../lib/StudentObj';
 import { Button } from '@nextui-org/react';
 import NewStudentModal from './NewStudentModal';
 import { BlankNode, DeskLayout, DeskTemplate, GridSpec, SeatingPlan } from '../../../lib/SeatingPlan';
 import DeskGridModal from './DeskGridModal';
-import { getDefaultGridSpec, initializeDeskPlan } from '../../../util/deskLayout';
+import { deepCopyDeskLayout, getDefaultGridSpec, initializeDeskPlan, isDeskTemplate } from '../../../util/deskLayout';
 import SeatAssignModal from './SeatAssignModal';
 
 type Name = 
@@ -35,7 +35,7 @@ interface ClassroomState {
   className: Name
   gradeLevel: SchoolGrade
   classNumber: number | undefined
-  studentEnrollment: (StudentObj & BlankNode)[]
+  studentEnrollment: NewStudent[]
   deskRows: number
   deskColumns: number
   deskAt: (DeskTemplate | {}) [][]
@@ -94,67 +94,111 @@ const newClassReducer = (state: ClassroomState, action: ClassroomConfigAction): 
   }
 }
 
+function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]): (DeskTemplate | {})[][] {
+  let studentNumber: number = 0
+  const newSeating: (DeskTemplate | {})[][] = deepCopyDeskLayout(desks)
+  for (let j = 0; j < newSeating[0].length; j++) {
+    for (let i = 0; i < newSeating.length; i++) {
+      const obj: DeskTemplate | {} = newSeating[i][j]
+      if (isDeskTemplate(obj) && obj.assign && students[studentNumber]) {
+        obj.assignedTo = students[studentNumber]
+        obj.studentIndex = studentNumber 
+        obj.assignmentConfirmed = true
+        studentNumber++
+      }
+    }
+  }
+  return newSeating
+
+}
+
+
 const initialSeatingPlan: SeatingPlan = {
+  students: [],
   deskAt: [[]]
 }
 
 type SeatingPlanChange =
-| {type: 'initialize_seating_plan', students: StudentObj[], layout: SeatingPlan}
-| {type: 'change_desk_layout'}
+| {type: 'initialize_seating_plan', students: Student[], layout: SeatingPlan}
+| {type: 'finalize_seating_plan', newLayout: SeatingPlan}
 
 const seatingStateReducer = (state: SeatingPlan, action: SeatingPlanChange): SeatingPlan => {
   switch (action.type) {
     case 'initialize_seating_plan': {
-
+      const newSeatingPlan: SeatingPlan = {
+        students: sortStudents(action.students),
+        deskAt: getDefaultSeating(
+          sortStudents(action.students), action.layout.deskAt
+        )
+      }
+      return newSeatingPlan 
+    }
+    case 'finalize_seating_plan': {
+      const newSeatingPlan: SeatingPlan = {
+        students: state.students,
+        deskAt: action.newLayout.deskAt
+      }
+      return newSeatingPlan
     }
   }
   return state;
 }
 
-const Setup = () => {
+const NewCourseDialog = () => {
   const [currentDialogStep, setCurrentDialogStep] = useState<number>(0)
 
   const [newClassState, dispatchNewClassAction] = useReducer<(state: ClassroomState, action: ClassroomConfigAction) => ClassroomState>(newClassReducer, initialConfigState)
   const [seatingPlanState, dispatchSeatingPlanChange] = useReducer<(state: SeatingPlan, action: SeatingPlanChange) => SeatingPlan>(seatingStateReducer, initialSeatingPlan)
 
-  function studentDragStartHandler(event: DragEvent) {
-    
-  }
-
-  function enrollmentFinalizedHandler(enrollment: (StudentObj & BlankNode)[]) {
+  function enrollmentFinalizedHandler(enrollment: (StudentObj & BlankNode)[]): void {
     dispatchNewClassAction({type:'finalize_student_list', newStudents: enrollment})
     setCurrentDialogStep(2)
   }
 
+  function deskGridModalNextHandler(students: Student[], layout: DeskLayout): void {
+    dispatchNewClassAction({type: 'finalize_desk_layout', rows: layout.deskRows, columns: layout.deskColumns, desks: [...layout.deskAt]})
+    dispatchSeatingPlanChange({type: 'initialize_seating_plan', students: students, layout: {students: students, deskAt: layout.deskAt}})
+    setCurrentDialogStep(3)
+  }
+
+  function deskGridModalPreviousHandler(): void {
+    setCurrentDialogStep(1)
+  }
+
+  function seatAssignModalPreviousHandler(): void {
+    setCurrentDialogStep(2)
+  }
+
+  function seatAssignModalProceedHandler(seatingPlan: SeatingPlan): void {
+    dispatchSeatingPlanChange({type: 'finalize_seating_plan', newLayout: seatingPlan})
+    setCurrentDialogStep(0)
+  }
+  
   return (
     <>
-      <NewStudentModal isOpen={currentDialogStep === 1} size='5xl' onEnrollmentFinalized={enrollmentFinalizedHandler}></NewStudentModal>
-      <DeskGridModal isOpen={currentDialogStep === 2} size='5xl' deskRows={newClassState.deskRows} deskColumns={newClassState.deskColumns} enrollment={newClassState.studentEnrollment} desks={newClassState.deskAt} onLayoutFinalized={(layout: DeskLayout) => {
-        dispatchNewClassAction({type: 'finalize_desk_layout', rows: layout.deskRows, columns: layout.deskColumns, desks: [...layout.deskAt]})
-        setCurrentDialogStep(3)
-      }}></DeskGridModal>
-      <SeatAssignModal isOpen={currentDialogStep === 3} size='5xl' students={newClassState.studentEnrollment} desks={newClassState.deskAt} >
-      </SeatAssignModal>
-      {/* <Modal id='assign-seats' isOpen={currentDialogStep === 3} size='5xl'>
-        <ModalContent>
-          <ModalHeader>
-            Assign Seats
-          </ModalHeader>
-          <ModalBody>
-            <div className={`desk-plan grid gap-10 grid-rows-${newClassState.deskLayout.rows} grid-cols-${newClassState.deskLayout.columns}`}>
-              <SeatingPlan students={newClassState.studentEnrollment} deskSlots={newClassState.deskLayoutCells} seatingGrid={newClassState.deskLayout}></SeatingPlan>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button color='primary'>
-              Finish
-            </Button>
-            <Button>
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal> */}
+      <NewCourseDialog.NewStudentModal
+        isOpen={currentDialogStep === 1}
+        size='5xl'
+        onNextPressed={enrollmentFinalizedHandler}
+      />
+      <NewCourseDialog.DeskGridModal
+        isOpen={currentDialogStep === 2}
+        size='5xl'
+        deskRows={newClassState.deskRows}
+        deskColumns={newClassState.deskColumns}
+        enrollment={newClassState.studentEnrollment}
+        desks={newClassState.deskAt}
+        onBackPressed={deskGridModalPreviousHandler}
+        onNextPressed={deskGridModalNextHandler}
+      />
+      <NewCourseDialog.SeatAssignModal
+        isOpen={currentDialogStep === 3}
+        size='5xl'
+        students={newClassState.studentEnrollment}
+        desks={seatingPlanState.deskAt}
+        onBackPressed={seatAssignModalPreviousHandler}
+        onFinishPressed={seatAssignModalProceedHandler}
+      />
       <Button onPress={() => {setCurrentDialogStep(1)}}>
         New Class
       </Button>
@@ -163,4 +207,7 @@ const Setup = () => {
   )
 }
 
-export default Setup
+export default NewCourseDialog
+NewCourseDialog.NewStudentModal = NewStudentModal
+NewCourseDialog.DeskGridModal = DeskGridModal
+NewCourseDialog.SeatAssignModal = SeatAssignModal
