@@ -104,6 +104,8 @@ function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]):
         obj.assignedTo = students[studentNumber]
         obj.studentIndex = studentNumber 
         obj.assignmentConfirmed = true
+        obj.row = i
+        obj.column = j
         studentNumber++
       }
     }

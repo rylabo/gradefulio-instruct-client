@@ -21,6 +21,8 @@ export type IdentifiedNode = {
 export type DeskTemplate = {
   assignedTo?: Student
   studentIndex?: number
+  row: number
+  column: number
   assign: boolean
   assignmentConfirmed: boolean
 }

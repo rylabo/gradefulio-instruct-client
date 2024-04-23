@@ -1,9 +1,13 @@
-import React, { useEffect, useReducer, useRef } from 'react'
+import React, { useEffect, useMemo, useReducer, useRef } from 'react'
 import { Button, Card, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
 import { insertSort, sortStudents, Student } from '../../../lib/StudentObj'
 import { DeskLayout, DeskTemplate, SeatingPlan } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, getCellUsage, isDeskTemplate } from '../../../util/deskLayout'
 import { assert } from 'console'
+
+let dragStartCount: number = 0
+let dragEnterCount: number = 0
+let dragLeaveCount: number = 0
 
 interface AssignSeatProps {
   isOpen: boolean
@@ -30,6 +34,7 @@ interface SeatingAssignment {
     deskRow: number
     deskColumn: number
   } | undefined
+  draggingOver: boolean
   unnassignedArrayIndex?: number
   
   unassignedStudents: Student[]
@@ -77,7 +82,8 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
       return {
         desks: getDefaultSeating(action.students, action.desks),
         students: action.students,
-        unassignedStudents: []
+        unassignedStudents: [],
+        draggingOver: false
       } 
     }
 
@@ -115,8 +121,8 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
         }
 
         // wipe the sourceDeskInfo
+        newSeatingAssignment.sourceDeskInfo = undefined
       }
-      newSeatingAssignment.sourceDeskInfo = undefined
       return newSeatingAssignment
     }
 
@@ -129,38 +135,41 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
       if (seating.sourceDeskInfo)
         newSeatingAssignment.sourceDeskInfo = {...seating.sourceDeskInfo}
 
-      // store student info from destination desk
-      newSeatingAssignment.destinationDeskInfo = {
-        studentIndex: action.destinationStudentIndex,
-        deskRow: action.destinationDeskRow,
-        deskColumn: action.destinationDeskColumn
-      }
-      let swappedStudent: Student | undefined = undefined
-      if (action.destinationStudentIndex){
-        swappedStudent = seating.students[action.destinationStudentIndex]
-        newSeatingAssignment.destinationDeskInfo.student = swappedStudent
-      }
+      if(!newSeatingAssignment.draggingOver){
+        newSeatingAssignment.draggingOver = true
+        // store student info from destination desk
+        newSeatingAssignment.destinationDeskInfo = {
+          studentIndex: action.destinationStudentIndex,
+          deskRow: action.destinationDeskRow,
+          deskColumn: action.destinationDeskColumn
+        }
+        let swappedStudent: Student | undefined = undefined
+        if (action.destinationStudentIndex){
+          swappedStudent = seating.students[action.destinationStudentIndex]
+          newSeatingAssignment.destinationDeskInfo.student = swappedStudent
+        }
 
-      if(seating.sourceDeskInfo  !== undefined){
-        // setting placeholder vars for type guarding
-        const sourceDesk: DeskTemplate | {} = 
-          newSeatingAssignment.desks
-            [seating.sourceDeskInfo.deskRow]
-            [seating.sourceDeskInfo.deskColumn]
-        const destinationDesk: DeskTemplate | {} = 
-          newSeatingAssignment.desks
-            [action.destinationDeskRow]
-            [action.destinationDeskColumn]
-        
-        if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
-          // perform swap
-          destinationDesk.assignedTo = seating.sourceDeskInfo.student
-          destinationDesk.studentIndex = seating.sourceDeskInfo.studentIndex
-          destinationDesk.assignmentConfirmed = false
-          if (swappedStudent){
-            sourceDesk.assignedTo = swappedStudent
-            sourceDesk.studentIndex = action.destinationStudentIndex
-            sourceDesk.assignmentConfirmed = false
+        if(seating.sourceDeskInfo  !== undefined){
+          // setting placeholder vars for type guarding
+          const sourceDesk: DeskTemplate | {} = 
+            newSeatingAssignment.desks
+              [seating.sourceDeskInfo.deskRow]
+              [seating.sourceDeskInfo.deskColumn]
+          const destinationDesk: DeskTemplate | {} = 
+            newSeatingAssignment.desks
+              [action.destinationDeskRow]
+              [action.destinationDeskColumn]
+          
+          if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
+            // perform swap
+            destinationDesk.assignedTo = seating.sourceDeskInfo.student
+            destinationDesk.studentIndex = seating.sourceDeskInfo.studentIndex
+            destinationDesk.assignmentConfirmed = false
+            if (swappedStudent){
+              sourceDesk.assignedTo = swappedStudent
+              sourceDesk.studentIndex = action.destinationStudentIndex
+              sourceDesk.assignmentConfirmed = false
+            }
           }
         }
       }
@@ -178,28 +187,32 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
 
       // we should have both dragged and swapped student info, just need to check 
 
-      if( seating.sourceDeskInfo  !== undefined && seating.destinationDeskInfo !== undefined){
-        // type guarding
-        const sourceDesk: DeskTemplate | {} = 
-          newSeatingAssignment.desks
-            [seating.sourceDeskInfo.deskRow]
-            [seating.sourceDeskInfo.deskColumn]
-        const destinationDesk: DeskTemplate | {} = 
-          newSeatingAssignment.desks
-          [seating.destinationDeskInfo.deskRow]
-          [seating.destinationDeskInfo.deskColumn]
-      
-        if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
-          // undo swap
-          destinationDesk.assignedTo = seating.destinationDeskInfo.student
-          destinationDesk.studentIndex = seating.destinationDeskInfo.studentIndex
-          destinationDesk.assignmentConfirmed = true
-          sourceDesk.assignedTo = seating.sourceDeskInfo.student
-          sourceDesk.studentIndex = seating.sourceDeskInfo.studentIndex
-          sourceDesk.assignmentConfirmed = true
+      if(newSeatingAssignment.draggingOver){
+        newSeatingAssignment.draggingOver = false
 
-          // wipe swappedStudentInfo
-          newSeatingAssignment.destinationDeskInfo = undefined
+        if( newSeatingAssignment.sourceDeskInfo  !== undefined && newSeatingAssignment.destinationDeskInfo !== undefined){
+          // type guarding
+          const sourceDesk: DeskTemplate | {} = 
+            newSeatingAssignment.desks
+              [newSeatingAssignment.sourceDeskInfo.deskRow]
+              [newSeatingAssignment.sourceDeskInfo.deskColumn]
+          const destinationDesk: DeskTemplate | {} = 
+            newSeatingAssignment.desks
+              [newSeatingAssignment.destinationDeskInfo.deskRow]
+              [newSeatingAssignment.destinationDeskInfo.deskColumn]
+        
+          if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
+            // undo swap
+            destinationDesk.assignedTo = newSeatingAssignment.destinationDeskInfo.student
+            destinationDesk.studentIndex = newSeatingAssignment.destinationDeskInfo.studentIndex
+            destinationDesk.assignmentConfirmed = true
+            sourceDesk.assignedTo = newSeatingAssignment.sourceDeskInfo.student
+            sourceDesk.studentIndex = newSeatingAssignment.sourceDeskInfo.studentIndex
+            sourceDesk.assignmentConfirmed = true
+
+            // wipe swappedStudentInfo
+            newSeatingAssignment.destinationDeskInfo = undefined
+          }
         }
       }
       return newSeatingAssignment
@@ -256,11 +269,13 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
 
 
 function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinishPressed, onCancel } : AssignSeatProps) {
-  const [seating, dispatchAssignment] = useReducer<(seating: SeatingAssignment, action: AssignAction) => SeatingAssignment>(seatingReducer, {desks: desks, unassignedStudents: [], students: students})
+  const [seating, dispatchAssignment] = useReducer<(seating: SeatingAssignment, action: AssignAction) => SeatingAssignment>(seatingReducer, {desks: desks, unassignedStudents: [], students: students, draggingOver: false})
 
   useEffect(() => {
     dispatchAssignment({type: 'default_seating', students: sortStudents(students), desks: desks})
   }, [desks])
+
+  const deskCards: JSX.Element[] = getDesksDisplay(seating.desks)
 
   function getDesksDisplay(desks: (DeskTemplate | {})[][]): JSX.Element[] {
     const deskDisplay: JSX.Element[] = []
@@ -268,8 +283,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
         for (let rowIndex = 0; rowIndex < desks.length; rowIndex++){
           const template: DeskTemplate | {} = desks[rowIndex][colIndex]
           if (isDeskTemplate(template)){
-            if(template.assignedTo && template.studentIndex !== undefined){
-              deskDisplay.push((
+            deskDisplay.push((
               <Card 
                 key={'desk [' + rowIndex + ', ' + colIndex + ']' }
                 className={`col-start-${colIndex + 1} row-start-${desks.length - rowIndex} min-h-32`}
@@ -277,26 +291,19 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
                 onDragLeave={handleDragOutOfDesk()}
                 style={{minHeight: 128}}
               >
-                <Chip
-                  draggable
-                  onDragStart={handleDrag(template.studentIndex, rowIndex, colIndex)}
-                  onDragEnd={handleDragEnd()}
-                >
-                  {template.assignedTo.familyNames[0].nameToken.ja}　{template.assignedTo.givenNames[0].nameToken.ja}
-                </Chip>
-              </Card>))
-            }
-            else {
-              deskDisplay.push((
-              <Card 
-                key={'desk [' + rowIndex + ', ' + colIndex + ']'}
-                className={`col-start-${colIndex + 1} row-start-${desks.length - rowIndex}`}
-                onDragEnter={handleDragOverDesk(rowIndex, colIndex, template.studentIndex)}
-                onDragLeave={handleDragOutOfDesk()}
-                style={{minHeight: 128}}
-              >
-              </Card>))
-            }
+                {
+                  template.assignedTo && template.studentIndex !== undefined ? (
+                    <Chip
+                      draggable
+                      onDragStart={handleDrag(template.studentIndex, template.row, template.column)}
+                      onDragEnd={handleDragEnd()}
+                    >
+                      {template.assignedTo.familyNames[0].nameToken.ja}　{template.assignedTo.givenNames[0].nameToken.ja}
+                    </Chip>
+                  ) : undefined
+                }
+              </Card>
+            ))
           }
         }  
       }
@@ -306,6 +313,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
 
   function handleDrag(studentIndex: number, deskRow: number, deskColumn: number) {
     return (event: React.DragEvent) => {
+      dragStartCount++
       event.dataTransfer.setData('text/plain', JSON.stringify({
         student: students[studentIndex],
         studentIndex: studentIndex,
@@ -327,6 +335,8 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
     destinationStudentIndex?: number
   ) {
     return (event: React.DragEvent) => {
+      dragEnterCount++
+      event.stopPropagation()
       dispatchAssignment({
         type: 'move_over_desk',
         destinationStudentIndex: destinationStudentIndex,
@@ -338,6 +348,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
 
   function handleDragOutOfDesk() {
     return (event: React.DragEvent) => {
+      dragLeaveCount++
       dispatchAssignment({type: 'move_outside_desk'})
     }
   }
@@ -355,8 +366,10 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
           Assign Desks
         </ModalHeader>
         <ModalBody >
-          <div className={`desk-plan grid gap-10 grid-rows-${seating.desks.length} grid-cols-${seating.desks[0].length}`}>
-            {getDesksDisplay(seating.desks)}
+          <div 
+            className={`desk-plan grid gap-10 grid-rows-${seating.desks.length} grid-cols-${seating.desks[0].length}`}
+          >
+            {deskCards}
           </div>
           <div>
             {/* staging area for students not assigned desks */}
@@ -389,6 +402,12 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
 
     </Modal>
           <div className='flex'>
+            <p className='flex-1'>drag start = {dragStartCount}</p>
+            <p className='flex-1'>drag enter = {dragEnterCount}</p>
+            <p className='flex-1'>drag leave = {dragLeaveCount}</p>
+          </div>
+          <div style={{height: 100}}></div>
+          <div className='flex'>
             <div className='flex-1'>
               {JSON.stringify(seating.desks)}
             </div>
@@ -402,7 +421,6 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
               {JSON.stringify(seating.destinationDeskInfo)}
             </div>
           </div>
-
     </>
   )
 }
