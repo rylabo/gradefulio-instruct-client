@@ -48,7 +48,7 @@ export function initializeDeskPlan(spec: GridSpec): DeskTemplate[][] {
   for (let i: number = 0; i < spec.rows; i++) {
     plan.push([])
     for (let j: number = 0; j < spec.columns; j++) {
-      plan[i].push({assign: true, assignmentConfirmed: false})
+      plan[i].push({assign: true, assignmentConfirmed: false, row: i, column: j})
     }
   }
   return plan
