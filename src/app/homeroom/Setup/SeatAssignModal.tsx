@@ -160,7 +160,7 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
             deskColumn: action.destinationDeskColumn
           }
           let swappedStudent: Student | undefined = undefined
-          if (action.destinationStudentIndex){
+          if (action.destinationStudentIndex !== undefined){
             swappedStudent = seating.students[action.destinationStudentIndex]
             newSeatingAssignment.destinationDeskInfo.student = swappedStudent
           }
@@ -220,7 +220,7 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
         
           if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
             // undo swap
-            if (sourceDesk.studentIndex) {
+            if (sourceDesk.studentIndex !== undefined) {
               destinationDesk.assignedTo = newSeatingAssignment.destinationDeskInfo.student
               destinationDesk.studentIndex = newSeatingAssignment.destinationDeskInfo.studentIndex
               destinationDesk.assignmentConfirmed = true
