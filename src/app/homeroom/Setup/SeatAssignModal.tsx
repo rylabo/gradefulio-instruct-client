@@ -134,7 +134,7 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
             }                
         }
 
-        // wipe the sourceDeskInfo
+        // wipe the sourceDeskInfo and destinationDeskInfo
         newSeatingAssignment.sourceDeskInfo = undefined
         newSeatingAssignment.destinationDeskInfo = undefined
       }
@@ -152,43 +152,43 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
 
       if(!newSeatingAssignment.draggingOver){
         if (newSeatingAssignment.sourceDeskInfo && newSeatingAssignment.sourceDeskInfo.studentIndex !== action.destinationStudentIndex){
-        newSeatingAssignment.draggingOver = true
-        // store student info from destination desk
-        newSeatingAssignment.destinationDeskInfo = {
-          studentIndex: action.destinationStudentIndex,
-          deskRow: action.destinationDeskRow,
-          deskColumn: action.destinationDeskColumn
-        }
-        let swappedStudent: Student | undefined = undefined
-        if (action.destinationStudentIndex){
-          swappedStudent = seating.students[action.destinationStudentIndex]
-          newSeatingAssignment.destinationDeskInfo.student = swappedStudent
-        }
+          newSeatingAssignment.draggingOver = true
+          // store student info from destination desk
+          newSeatingAssignment.destinationDeskInfo = {
+            studentIndex: action.destinationStudentIndex,
+            deskRow: action.destinationDeskRow,
+            deskColumn: action.destinationDeskColumn
+          }
+          let swappedStudent: Student | undefined = undefined
+          if (action.destinationStudentIndex){
+            swappedStudent = seating.students[action.destinationStudentIndex]
+            newSeatingAssignment.destinationDeskInfo.student = swappedStudent
+          }
 
-        if(seating.sourceDeskInfo  !== undefined){
-          // setting placeholder vars for type guarding
-          const sourceDesk: DeskTemplate | {} = 
-            newSeatingAssignment.desks
-              [seating.sourceDeskInfo.deskRow]
-              [seating.sourceDeskInfo.deskColumn]
-          const destinationDesk: DeskTemplate | {} = 
-            newSeatingAssignment.desks
-              [action.destinationDeskRow]
-              [action.destinationDeskColumn]
-          
-          if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
-            // perform swap
-            destinationDesk.assignedTo = seating.sourceDeskInfo.student
-            destinationDesk.studentIndex = seating.sourceDeskInfo.studentIndex
-            destinationDesk.assignmentConfirmed = false
-            if (swappedStudent){
-              sourceDesk.assignedTo = swappedStudent
-              sourceDesk.studentIndex = action.destinationStudentIndex
+          if(seating.sourceDeskInfo  !== undefined){
+            // setting placeholder vars for type guarding
+            const sourceDesk: DeskTemplate | {} = 
+              newSeatingAssignment.desks
+                [seating.sourceDeskInfo.deskRow]
+                [seating.sourceDeskInfo.deskColumn]
+            const destinationDesk: DeskTemplate | {} = 
+              newSeatingAssignment.desks
+                [action.destinationDeskRow]
+                [action.destinationDeskColumn]
+            
+            if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
+              // perform swap
+              destinationDesk.assignedTo = seating.sourceDeskInfo.student
+              destinationDesk.studentIndex = seating.sourceDeskInfo.studentIndex
+              destinationDesk.assignmentConfirmed = false
               sourceDesk.assignmentConfirmed = false
+              if (swappedStudent){
+                sourceDesk.assignedTo = swappedStudent
+                sourceDesk.studentIndex = action.destinationStudentIndex
+              }
             }
           }
         }
-      }
       }
       return newSeatingAssignment
     }
@@ -220,9 +220,15 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
         
           if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
             // undo swap
-            destinationDesk.assignedTo = newSeatingAssignment.destinationDeskInfo.student
-            destinationDesk.studentIndex = newSeatingAssignment.destinationDeskInfo.studentIndex
-            destinationDesk.assignmentConfirmed = true
+            if (sourceDesk.studentIndex) {
+              destinationDesk.assignedTo = newSeatingAssignment.destinationDeskInfo.student
+              destinationDesk.studentIndex = newSeatingAssignment.destinationDeskInfo.studentIndex
+              destinationDesk.assignmentConfirmed = true
+            } else {
+              destinationDesk.assignedTo = undefined
+              destinationDesk.studentIndex = undefined
+              destinationDesk.assignmentConfirmed = true
+            }
             sourceDesk.assignedTo = newSeatingAssignment.sourceDeskInfo.student
             sourceDesk.studentIndex = newSeatingAssignment.sourceDeskInfo.studentIndex
             sourceDesk.assignmentConfirmed = true
@@ -241,10 +247,17 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
         const destinationDesk: DeskTemplate | {} = seating.desks[seating.destinationDeskInfo.deskRow][seating.destinationDeskInfo.deskColumn]
 
         // confirm seating
-        if (isDeskTemplate(sourceDesk)) 
-          sourceDesk.assignmentConfirmed = true
-        if (isDeskTemplate(destinationDesk)) 
+        if (isDeskTemplate(destinationDesk)){
           destinationDesk.assignmentConfirmed = true
+          if (isDeskTemplate(sourceDesk)) {
+            // if destinationDesk is unoccupied, wipe the source desk
+            if (destinationDesk.assignedTo) {
+              sourceDesk.assignedTo = undefined
+              sourceDesk.studentIndex = undefined
+            }
+            sourceDesk.assignmentConfirmed = true
+          }  
+        }
       }
 
       // wipe draggedStudentInfo and swappedStudentInfo
