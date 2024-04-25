@@ -137,6 +137,7 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
         // wipe the sourceDeskInfo and destinationDeskInfo
         newSeatingAssignment.sourceDeskInfo = undefined
         newSeatingAssignment.destinationDeskInfo = undefined
+        newSeatingAssignment.draggingOver = false
       }
       return newSeatingAssignment
     }
@@ -149,8 +150,9 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
       newSeatingAssignment.desks = deepCopyDeskLayout(seating.desks)
       if (seating.sourceDeskInfo)
         newSeatingAssignment.sourceDeskInfo = {...seating.sourceDeskInfo}
-
+      // has dragEnter fired previously?
       if(!newSeatingAssignment.draggingOver){
+        // check that there is a student being dragged and if that student is being dragged over their own desk
         if (newSeatingAssignment.sourceDeskInfo && newSeatingAssignment.sourceDeskInfo.studentIndex !== action.destinationStudentIndex){
           newSeatingAssignment.draggingOver = true
           // store student info from destination desk
@@ -242,9 +244,16 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
     }
 
     case 'move_finalize' : {
+      // see if chip is dragged over the same
       if( seating.sourceDeskInfo  !== undefined && seating.destinationDeskInfo !== undefined){
-        const sourceDesk: DeskTemplate | {} = seating.desks[seating.sourceDeskInfo.deskRow][seating.sourceDeskInfo.deskColumn]
-        const destinationDesk: DeskTemplate | {} = seating.desks[seating.destinationDeskInfo.deskRow][seating.destinationDeskInfo.deskColumn]
+        const newSeatingAssignment: SeatingAssignment = {...seating}
+        newSeatingAssignment.desks = deepCopyDeskLayout(seating.desks)
+        if (seating.sourceDeskInfo)
+          newSeatingAssignment.sourceDeskInfo = {...seating.sourceDeskInfo}
+        if (seating.destinationDeskInfo)
+          newSeatingAssignment.destinationDeskInfo = {...seating.destinationDeskInfo}
+        const sourceDesk: DeskTemplate | {} = newSeatingAssignment.desks[seating.sourceDeskInfo.deskRow][seating.sourceDeskInfo.deskColumn]
+        const destinationDesk: DeskTemplate | {} = newSeatingAssignment.desks[seating.destinationDeskInfo.deskRow][seating.destinationDeskInfo.deskColumn]
 
         // confirm seating
         if (isDeskTemplate(destinationDesk)){
@@ -257,6 +266,24 @@ function seatingReducer(seating: SeatingAssignment, action: AssignAction): Seati
             }
             sourceDesk.assignmentConfirmed = true
           }  
+        }
+      } 
+
+      // check if chip being dragged is over the desk, cancel if it is
+      else {
+
+        const newSeatingAssignment: SeatingAssignment = {...seating}
+        newSeatingAssignment.desks = deepCopyDeskLayout(seating.desks)
+        if (seating.sourceDeskInfo)
+          newSeatingAssignment.sourceDeskInfo = {...seating.sourceDeskInfo}
+
+        if (newSeatingAssignment.sourceDeskInfo){
+        const sourceDesk: DeskTemplate | {} =
+          newSeatingAssignment.desks[newSeatingAssignment.sourceDeskInfo.deskRow][newSeatingAssignment.sourceDeskInfo.deskColumn]
+
+          if (isDeskTemplate(sourceDesk)){
+            sourceDesk.assignmentConfirmed = true
+          }
         }
       }
 
@@ -318,7 +345,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
                 key={'desk [' + rowIndex + ', ' + colIndex + ']' }
                 className={`col-start-${colIndex + 1} row-start-${desks.length - rowIndex} min-h-32`}
                 onDragEnter={handleDragOverDesk(rowIndex, colIndex, template.studentIndex)}
-                // onDragLeave={handleDragOutOfDesk()}
+                onDrop={handleDrop()}
                 style={{minHeight: 128}}
               >
                 {
@@ -349,6 +376,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
         deskRow: deskRow,
         deskColumn: deskColumn
       }))
+      event.dataTransfer.dropEffect = 'move'
       dispatchAssignment({
         type: 'move_start',
         studentIndex: studentIndex,
@@ -378,8 +406,8 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
   }
 
   function handleDragOutOfDesk() {
-    console.log("Drag Leave Fired")
     return (event: React.DragEvent) => {
+      console.log("Drag Leave Fired")
       dragEnterLeaveBalance--
       dragLeaveCount++
       event.stopPropagation()
@@ -388,7 +416,17 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
   }
   function handleDragEnd() {
     return (event: React.DragEvent) => {
+      event.stopPropagation()
       dispatchAssignment({type: 'move_cancel'})
+    }
+  }
+
+  function handleDrop() {
+    return (event: React.DragEvent) => {
+      const data = JSON.parse(event.dataTransfer.getData('text/plain'))
+      console.log("Drop Fired")
+      event.stopPropagation()
+      dispatchAssignment({type: 'move_finalize'})
     }
   }
 
@@ -444,17 +482,15 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
           <div style={{height: 100}}></div>
           <div className='flex'>
             <div className='flex-1'>
-              {JSON.stringify(seating.desks)}
-            </div>
-            <div className='flex-1'>
-              {JSON.stringify(seating.students)}
-            </div>
-            <div className='flex-1'>
               {JSON.stringify(seating.sourceDeskInfo)}
             </div>
             <div className='flex-1'>
               {JSON.stringify(seating.destinationDeskInfo)}
             </div>
+            <div className='flex-1'>
+              {JSON.stringify('Over valid drop target:' + seating.draggingOver)}
+            </div>
+
           </div>
     </>
   )
