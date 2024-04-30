@@ -3,7 +3,7 @@ import React, { useState, DragEvent, useReducer } from 'react'
 import { NewStudent, sortStudents, Student, StudentObj } from '../../../lib/StudentObj';
 import { Button } from '@nextui-org/react';
 import NewStudentModal from './NewStudentModal';
-import { BlankNode, DeskLayout, DeskTemplate, GridSpec, SeatingPlan } from '../../../lib/SeatingPlan';
+import { BlankNode, DeskLayoutTemplate, DeskTemplate, GridSpec, SeatingPlan } from '../../../lib/SeatingPlan';
 import DeskGridModal from './DeskGridModal';
 import { deepCopyDeskLayout, getDefaultGridSpec, initializeDeskPlan, isDeskTemplate } from '../../../util/deskLayout';
 import SeatAssignModal from './SeatAssignModal';
@@ -157,9 +157,9 @@ const NewCourseDialog = () => {
     setCurrentDialogStep(2)
   }
 
-  function deskGridModalNextHandler(students: Student[], layout: DeskLayout): void {
+  function deskGridModalNextHandler(students: Student[], layout: DeskLayoutTemplate): void {
     dispatchNewClassAction({type: 'finalize_desk_layout', rows: layout.deskRows, columns: layout.deskColumns, desks: [...layout.deskAt]})
-    dispatchSeatingPlanChange({type: 'initialize_seating_plan', students: students, layout: {students: students, deskAt: layout.deskAt}})
+    dispatchSeatingPlanChange({type: 'initialize_seating_plan', students: sortStudents(students), layout: {students: sortStudents(students), deskAt: layout.deskAt}})
     setCurrentDialogStep(3)
   }
 
