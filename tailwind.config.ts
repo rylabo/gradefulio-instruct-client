@@ -10,11 +10,20 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      animation: {
+        'drag-start': 'disappear-h-7 0.005s linear forwards'
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      keyframes: {
+        'disappear-h-7': {
+          '0%, 95%': { height: '1.75rem'},
+          '100%': { height: '0px', visibility: 'hidden'}
+        }
+      }
     },
   },
   darkMode: 'class',

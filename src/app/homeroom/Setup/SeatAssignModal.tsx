@@ -15,33 +15,27 @@ interface AssignSeatProps {
   onCancel: () => void
 }
 
+interface DeskInfo {
+  student?: Student
+  studentIndex?: number
+  deskRow: number
+  deskColumn: number
+}
+
+interface DeskAssignment {
+  student: Student
+  studentIndex: number
+}
+
+type AssignedDeskInfo = DeskInfo & DeskAssignment
+
 interface SeatingAssignment {
   desks: (DeskTemplate | {})[][]
   students: Student[]
-  draggedStudentInfo?: {
-    student: Student
-    studentIndex: number
-    deskRow: number
-    deskColumn: number
-  } | undefined
-  displacedStudentInfo?: {
-    student?: Student
-    studentIndex?: number
-    deskRow: number
-    deskColumn: number
-  } | undefined
-  sourcePreview?: {
-    student?: Student
-    studentIndex?: number
-    deskRow: number
-    deskColumn: number
-  } | undefined
-  destinationPreview?: {
-    student: Student
-    studentIndex: number
-    deskRow: number
-    deskColumn: number
-  } | undefined
+  draggedStudentInfo?: AssignedDeskInfo | undefined
+  displacedStudentInfo?: DeskInfo | undefined
+  sourcePreview?: DeskInfo | undefined
+  destinationPreview?: AssignedDeskInfo | undefined
   draggingOver: boolean
   unnassignedArrayIndex?: number
   
@@ -308,9 +302,9 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
     dispatchAssignment({type: 'default_seating', students: students, desks: desks})
   }, [desks])
 
-  const deskCards: JSX.Element[] = getDesksDisplay(seating.desks)
+  const deskCards: JSX.Element[] = getDesksDisplay(seating.desks, seating.sourcePreview, seating.destinationPreview)
 
-  function getDesksDisplay(desks: (DeskTemplate | {})[][]): JSX.Element[] {
+  function getDesksDisplay(desks: (DeskTemplate | {})[][], sourcePreview: DeskInfo | undefined, destinationPreview: DeskInfo | undefined): JSX.Element[] {
     const deskDisplay: JSX.Element[] = []
       for (let colIndex = 0; colIndex < desks[0].length; colIndex++) {
         for (let rowIndex = 0; rowIndex < desks.length; rowIndex++){
@@ -327,17 +321,37 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
               >
                 {
                   // check if this desk is assigned to someone, and put a chip in if so.
-                  template.assignedTo && template.studentIndex !== undefined ? (
+                  template.assignedTo && template.studentIndex !== undefined && !(destinationPreview && destinationPreview.deskRow === rowIndex && destinationPreview.deskColumn === colIndex) ? (
                     <Chip
                       draggable
                       onDragStart={handleDrag(template.studentIndex, template.row, template.column)}
                       onDragEnd={handleDragEnd()}
+                      {...(sourcePreview && sourcePreview.deskRow === rowIndex && sourcePreview.deskColumn === colIndex) ? {className: 'animate-drag-start'}: {}} 
                     >
                       {template.assignedTo.familyNames[0].nameToken.ja}　{template.assignedTo.givenNames[0].nameToken.ja}
                     </Chip>
                   ) : undefined
                   // check if a chip is being dragged over, 
                 }
+
+                {
+                  // check if a for preview data, and put a chip in if present/
+                  sourcePreview && sourcePreview.deskRow === rowIndex && sourcePreview.deskColumn === colIndex && sourcePreview.student !== undefined ? (
+                    <Chip                    >
+                      {sourcePreview.student.familyNames[0].nameToken.ja}　{sourcePreview.student.givenNames[0].nameToken.ja}
+                    </Chip>
+                  ) : undefined
+                }
+
+                {
+                  // check if a for preview data, and put a chip in if present/
+                  destinationPreview && destinationPreview.deskRow === rowIndex && destinationPreview.deskColumn === colIndex && destinationPreview.student !== undefined ? (
+                    <Chip                    >
+                      {destinationPreview.student.familyNames[0].nameToken.ja}　{destinationPreview.student.givenNames[0].nameToken.ja}
+                    </Chip>
+                  ) : undefined
+                }
+
               </Card>
             ))
           }
@@ -349,7 +363,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
 
   function handleDrag(studentIndex: number, deskRow: number, deskColumn: number) {
     return (event: React.DragEvent) => {
-      const transferObject = {
+      const transferObject: AssignedDeskInfo = {
         student: students[studentIndex],
         studentIndex: studentIndex,
         deskRow: deskRow,
@@ -370,12 +384,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
   }
   
   function handleDragOverDesk(
-    sourceDeskInfo: {
-      student: Student
-      studentIndex: number
-      deskRow: number
-      deskColumn: number
-    } | undefined,
+    sourceDeskInfo: AssignedDeskInfo | undefined,
     destinationDeskRow: number,
     destinationDeskColumn: number,
     destinationStudentIndex?: number
@@ -390,12 +399,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
 
 
   function handleDragIntoDesk(
-    sourceDeskInfo: {
-      student: Student
-      studentIndex: number
-      deskRow: number
-      deskColumn: number
-    } | undefined,
+    sourceDeskInfo: AssignedDeskInfo | undefined,
     destinationDeskRow: number,
     destinationDeskColumn: number,
     destinationStudentIndex?: number
