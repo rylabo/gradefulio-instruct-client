@@ -27,8 +27,16 @@ export type DeskTemplate = {
   assignmentConfirmed: boolean
 }
 
-export interface DeskLayout {
+export interface DeskLayoutTemplate {
   deskRows: number
   deskColumns: number
   deskAt: (DeskTemplate | {})[][]
 }
+
+export interface PotentialDeskUse {
+  assignmentConfirmed: boolean
+  proposedAssignment?: Student
+  proposedStudentIndex?: number
+}
+
+export type Desk = DeskTemplate & PotentialDeskUse

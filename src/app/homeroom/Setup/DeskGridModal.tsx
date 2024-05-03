@@ -4,7 +4,7 @@ import React, { Key, useEffect, useReducer } from 'react'
 import SeatingGridSettings from './SeatingGridSettings'
 import DeskGridCell, { DeskGridCellProps } from './DeskGridCell'
 import { Student, StudentObj } from '../../../lib/StudentObj'
-import { DeskLayout, DeskTemplate, GridSpec } from '../../../lib/SeatingPlan'
+import { DeskLayoutTemplate, DeskTemplate, GridSpec } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, getCellUsage, getDefaultGridSpec, initializeDeskPlan } from '../../../util/deskLayout'
 
 interface DeskLayoutPlan {
@@ -83,7 +83,7 @@ interface DeskGridModalProps {
   enrollment: StudentObj[]
   desks: (DeskTemplate | {})[][]
   onBackPressed?: () => void
-  onNextPressed: (students: Student[], layout: DeskLayout) => void
+  onNextPressed: (students: Student[], layout: DeskLayoutTemplate) => void
   onCancel: () => void
 }
 
