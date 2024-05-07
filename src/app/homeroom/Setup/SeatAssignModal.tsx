@@ -1,6 +1,6 @@
 import React, { useEffect, useReducer } from 'react'
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
-import { insertSort, insertSortReferences, Student } from '../../../lib/StudentObj'
+import { insertSortReferences, Student } from '../../../lib/StudentObj'
 import { AssignedDeskInfo, DeskTemplate, SeatingPlan, SeatingPlusPreview, StudentReference } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, isDeskTemplate } from '../../../util/deskLayout'
 import SeatAssignPanel from './SeatAssignPanel'
@@ -10,7 +10,7 @@ import UnassignedPanel from './UnassignedPanel'
 function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]): [(DeskTemplate | {})[][], StudentReference[]] {
   let studentNumber: number = 0
   const newSeating: (DeskTemplate | {})[][] = deepCopyDeskLayout(desks)
-  const unassignedSeating: StudentReference[] = []
+  let unassignedSeating: StudentReference[] = []
   for (let j = 0; j < newSeating[0].length; j++) {
     for (let i = 0; i < newSeating.length; i++) {
       const obj: DeskTemplate | {} = newSeating[i][j]
@@ -24,10 +24,10 @@ function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]):
   }
 
   for (studentNumber; studentNumber < students.length; studentNumber++) {
-    unassignedSeating.push({
+    unassignedSeating = insertSortReferences({
       student: students[studentNumber],
       studentIndex: studentNumber
-    })
+    }, unassignedSeating)
   }
   return [newSeating, unassignedSeating]
 }
@@ -221,18 +221,29 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
             newSeatingAssignment.unassignedStudents.splice(action.sourceDeskInfo.deskColumn, 1)
             if (swappedStudent && action.destinationStudentIndex !== undefined) {
               // unnassigned student has been dropped on a desk occupied by a student
-              const [unassignedIndex, unassignedStudents] = insertSortReferences(
+              newSeatingAssignment.unassignedStudents = insertSortReferences(
                 { student: swappedStudent, studentIndex: action.destinationStudentIndex },
                 newSeatingAssignment.unassignedStudents
               )
-              newSeatingAssignment.unassignedStudents = unassignedStudents
             }
 
             destinationDesk.assignedTo = action.sourceDeskInfo.student
             destinationDesk.studentIndex = action.sourceDeskInfo.studentIndex
           }
         } else if (action.sourceDeskInfo.deskRow >= 0 && action.destinationDeskRow < 0){
-          // TODO implement drag from desk to staging area for unassigned students
+          const sourceDesk: DeskTemplate | {} = 
+          newSeatingAssignment.desks
+            [action.sourceDeskInfo.deskRow]
+            [action.sourceDeskInfo.deskColumn]
+
+          if (isDeskTemplate(sourceDesk)) {
+            newSeatingAssignment.unassignedStudents = insertSortReferences(
+              { student: action.sourceDeskInfo.student, studentIndex: action.sourceDeskInfo.studentIndex },
+              newSeatingAssignment.unassignedStudents
+            )
+            sourceDesk.assignedTo = undefined
+            sourceDesk.studentIndex = undefined
+          }
         }
 
         // wipe preview states
@@ -308,16 +319,27 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
   
   function handleDragOverDesk(
     sourceDeskInfo: AssignedDeskInfo | undefined,
-    destinationStudentIndex?: number
+    destinationDeskRow: number,
+    destinationDeskColumn: number
   ): (event: React.DragEvent) => void {
     return (event: React.DragEvent) => {
-      if (!event.isDefaultPrevented() && sourceDeskInfo && destinationStudentIndex !== sourceDeskInfo.studentIndex) {
+      if (!event.isDefaultPrevented() && sourceDeskInfo && !(destinationDeskRow === sourceDeskInfo.deskRow && destinationDeskColumn === sourceDeskInfo.deskColumn)) {
         event.stopPropagation()
         event.preventDefault()
       }
     }
   }
 
+  function handleDragOverUnassigned(
+    sourceDeskInfo: AssignedDeskInfo | undefined
+  ): (event: React.DragEvent) => void {
+    return (event: React.DragEvent) => {
+      if (!event.isDefaultPrevented() && sourceDeskInfo && sourceDeskInfo.deskRow !== -1) {
+        event.stopPropagation()
+        event.preventDefault()
+      }
+    }
+  }
 
   function handleDragIntoDesk(
     sourceDeskInfo: AssignedDeskInfo | undefined,
@@ -383,7 +405,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
         <ModalHeader>
           Assign Desks
         </ModalHeader>
-        <ModalBody>
+        <ModalBody className='flex'>
           <SeatAssignPanel
             seatingAssignment={seating}
             onStudentDragStart={handleDrag}
@@ -398,6 +420,8 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
             seatingAssignment={seating}
             onStudentDragStart={handleDrag}
             onStudentDragEnd={handleDragEnd}
+            onStudentDragOverUnassigned={handleDragOverUnassigned}
+            onStudentDrop={handleDrop}
           />
         </ModalBody>
         <ModalFooter>

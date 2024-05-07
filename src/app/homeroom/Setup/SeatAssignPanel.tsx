@@ -11,7 +11,8 @@ interface SeatAssignPanelProps {
   onStudentDragEnd: () => (event: React.DragEvent) => void
   onStudentDragOverDesk:(
     sourceDeskInfo: AssignedDeskInfo | undefined,
-    destinationStudentIndex?: number
+    destinationDeskRow: number,
+    destinationDeskColumn: number
   ) => (event: React.DragEvent) => void
   onStudentDragStudentOntoDesk: (
     sourceDeskInfo: AssignedDeskInfo | undefined,
@@ -41,7 +42,7 @@ function SeatAssignPanel({ seatingAssignment, onStudentDragStart, onStudentDragE
               <Card 
                 key={'desk [' + rowIndex + ', ' + colIndex + ']' }
                 className={`col-start-${colIndex + 1} row-start-${desks.length - rowIndex} min-h-32`}
-                onDragOver={onStudentDragOverDesk(seatingAssignment.draggedStudentInfo, template.studentIndex)}
+                onDragOver={onStudentDragOverDesk(seatingAssignment.draggedStudentInfo, rowIndex, colIndex)}
                 onDragEnter={onStudentDragStudentOntoDesk(seatingAssignment.draggedStudentInfo, rowIndex, colIndex, template.studentIndex)}
                 onDrop={onStudentDrop(rowIndex, colIndex, template.studentIndex)}
                 style={{minHeight: 128}}
