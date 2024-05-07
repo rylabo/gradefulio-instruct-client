@@ -40,3 +40,30 @@ export interface PotentialDeskUse {
 }
 
 export type Desk = DeskTemplate & PotentialDeskUse
+
+export interface DeskInfo {
+  student?: Student
+  studentIndex?: number
+  deskRow: number
+  deskColumn: number
+}
+
+export interface StudentReference {
+  student: Student
+  studentIndex: number
+}
+
+export type AssignedDeskInfo = DeskInfo & StudentReference
+
+export interface SeatingPlusPreview {
+  desks: (DeskTemplate | {})[][]
+  students: Student[]
+  draggedStudentInfo?: AssignedDeskInfo | undefined
+  displacedStudentInfo?: DeskInfo | undefined
+  sourcePreview?: DeskInfo | undefined
+  destinationPreview?: AssignedDeskInfo | undefined
+  draggingOver: boolean
+  unnassignedArrayIndex?: number
+  
+  unassignedStudents: StudentReference[]
+}

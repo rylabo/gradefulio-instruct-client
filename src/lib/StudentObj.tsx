@@ -1,4 +1,4 @@
-import { BlankNode, IdentifiedNode } from "./SeatingPlan";
+import { BlankNode, IdentifiedNode, StudentReference } from "./SeatingPlan";
 
 type Name = {
   annotation: string;
@@ -46,6 +46,19 @@ export function insertSort(student: Student, array: Student[]): [number, Student
   return [index, newArray]
 }
 
+export function insertSortReferences(studentReference: StudentReference, array: StudentReference[]): [number, StudentReference[]] {
+
+  // find the index
+  const newArray: StudentReference[] = [...array]
+  let index: number = 0
+  while (index < newArray.length && compareStudentReferences(studentReference, newArray[index]) <= 0) index++
+
+  // insert at index there
+  newArray.splice(index, 0, studentReference)
+  return [index, newArray]
+}
+
+
 export function compareStudents(a: Student, b: Student): number {
 
   // attendance numbers before names.
@@ -61,10 +74,22 @@ export function compareStudents(a: Student, b: Student): number {
   else return nameCompareStudents(a, b)
 }
 
+export function compareStudentReferences(a: StudentReference, b: StudentReference): number {
+  const studentComparison: number = compareStudents(a.student, b.student)
+  if (studentComparison !== 0) return studentComparison
+  else if (a.studentIndex > b.studentIndex) return 1
+  else if (a.studentIndex < b.studentIndex) return -1
+  else return 0
+}
+
 export function sortStudents(students: Student[]): Student[] {
   return students.toSorted(compareStudents)
 }
 
 export function nameSortStudents(students: Student[]): Student[] {
   return students.toSorted(nameCompareStudents)
+}
+
+export function sortStudentReferences(studentReferences: StudentReference[]) {
+  return studentReferences.toSorted(compareStudentReferences)
 }

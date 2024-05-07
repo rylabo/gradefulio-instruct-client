@@ -23,7 +23,7 @@ export function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
 }
 
 export function isDeskTemplate(obj: DeskTemplate | {}): obj is DeskTemplate{
-  if (Object.getOwnPropertyNames(obj).length > 0) return 'assign' in obj
+  if (obj !== undefined && Object.getOwnPropertyNames(obj).length > 0) return 'assign' in obj
   else return false
 }
 
