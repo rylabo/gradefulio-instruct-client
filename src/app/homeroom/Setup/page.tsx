@@ -204,7 +204,7 @@ const NewCourseDialog = () => {
       <NewCourseDialog.SeatAssignModal
         isOpen={currentDialogStep === 3}
         size='5xl'
-        students={newClassState.studentEnrollment}
+        students={seatingPlanState.students}
         desks={seatingPlanState.deskAt}
         onBackPressed={seatAssignModalPreviousHandler}
         onFinishPressed={seatAssignModalProceedHandler}

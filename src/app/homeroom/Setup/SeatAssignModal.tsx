@@ -1,9 +1,10 @@
 import React, { useEffect, useReducer } from 'react'
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
-import { insertSort, Student } from '../../../lib/StudentObj'
+import { insertSort, insertSortReferences, Student } from '../../../lib/StudentObj'
 import { AssignedDeskInfo, DeskTemplate, SeatingPlan, SeatingPlusPreview, StudentReference } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, isDeskTemplate } from '../../../util/deskLayout'
 import SeatAssignPanel from './SeatAssignPanel'
+import UnassignedPanel from './UnassignedPanel'
 
 
 function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]): [(DeskTemplate | {})[][], StudentReference[]] {
@@ -84,12 +85,8 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
 
     case 'move_start' : {
       const newSeatingAssignment: SeatingPlusPreview = deepCopyState(seating)
-      const sourceDesk: DeskTemplate | {} = newSeatingAssignment.desks[action.deskRow][action.deskColumn]
-      if (isDeskTemplate(sourceDesk)) {
-        sourceDesk.assignmentConfirmed = false
-      }
 
-      // se the info of the student being dragged
+      // set the info of the student being dragged
       newSeatingAssignment.draggedStudentInfo = {
         deskRow: action.deskRow,
         deskColumn: action.deskColumn,
@@ -193,25 +190,49 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
           newSeatingAssignment.displacedStudentInfo.student = swappedStudent
         }
 
+        // check if this is an unassigned student
+        if (action.sourceDeskInfo.deskRow >= 0 && action.destinationDeskRow >= 0) {
         // setting placeholder vars for type guarding
-        const sourceDesk: DeskTemplate | {} = 
-          newSeatingAssignment.desks
-            [action.sourceDeskInfo.deskRow]
-            [action.sourceDeskInfo.deskColumn]
-        const destinationDesk: DeskTemplate | {} = 
-          newSeatingAssignment.desks
-            [action.destinationDeskRow]
-            [action.destinationDeskColumn]
-        
-        if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
-          // perform swap
-          sourceDesk.assignedTo = swappedStudent ? swappedStudent : undefined
-          sourceDesk.studentIndex = swappedStudent ? action.destinationStudentIndex : undefined
+          const sourceDesk: DeskTemplate | {} = 
+            newSeatingAssignment.desks
+              [action.sourceDeskInfo.deskRow]
+              [action.sourceDeskInfo.deskColumn]
+          const destinationDesk: DeskTemplate | {} = 
+            newSeatingAssignment.desks
+              [action.destinationDeskRow]
+              [action.destinationDeskColumn]
+          
+          if(isDeskTemplate(sourceDesk) && isDeskTemplate(destinationDesk)){
+            // perform swap
+            sourceDesk.assignedTo = swappedStudent ? swappedStudent : undefined
+            sourceDesk.studentIndex = swappedStudent ? action.destinationStudentIndex : undefined
 
-          destinationDesk.assignedTo = action.sourceDeskInfo.student
-          destinationDesk.studentIndex = action.sourceDeskInfo.studentIndex
-          destinationDesk.assignmentConfirmed = true
-          sourceDesk.assignmentConfirmed = true
+            destinationDesk.assignedTo = action.sourceDeskInfo.student
+            destinationDesk.studentIndex = action.sourceDeskInfo.studentIndex
+          }  
+        } else if (action.sourceDeskInfo.deskRow < 0 && action.destinationDeskRow >= 0){
+          // student is being dropped from staging area to a desk
+          const destinationDesk: DeskTemplate | {} = 
+            newSeatingAssignment.desks
+              [action.destinationDeskRow]
+              [action.destinationDeskColumn]
+
+          if (isDeskTemplate(destinationDesk)) {
+            newSeatingAssignment.unassignedStudents.splice(action.sourceDeskInfo.deskColumn, 1)
+            if (swappedStudent && action.destinationStudentIndex !== undefined) {
+              // unnassigned student has been dropped on a desk occupied by a student
+              const [unassignedIndex, unassignedStudents] = insertSortReferences(
+                { student: swappedStudent, studentIndex: action.destinationStudentIndex },
+                newSeatingAssignment.unassignedStudents
+              )
+              newSeatingAssignment.unassignedStudents = unassignedStudents
+            }
+
+            destinationDesk.assignedTo = action.sourceDeskInfo.student
+            destinationDesk.studentIndex = action.sourceDeskInfo.studentIndex
+          }
+        } else if (action.sourceDeskInfo.deskRow >= 0 && action.destinationDeskRow < 0){
+          // TODO implement drag from desk to staging area for unassigned students
         }
 
         // wipe preview states
@@ -373,9 +394,11 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
             onStudentDrop={handleDrop}
           />
           
-          <div>
-            {/* staging area for students not assigned desks */}
-          </div>
+          <UnassignedPanel
+            seatingAssignment={seating}
+            onStudentDragStart={handleDrag}
+            onStudentDragEnd={handleDragEnd}
+          />
         </ModalBody>
         <ModalFooter>
           {
@@ -404,7 +427,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
 
     </Modal>
     <div style={{height: 100}}></div>
-    <div className='grid grid-rows-3 grid-cols-2'>
+    <div className='grid grid-rows-3 grid-cols-3'>
       <div className='row-start-1 col-start-1'>
         <br/>
         **** Student Being Dragged ****<br/>
@@ -424,6 +447,14 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
       </div>
       <div className='row-start-3'>
         <br/>{JSON.stringify('Over valid drop target:' + seating.draggingOver)}
+      </div>
+      <div>
+          <br/>==== Unassigned Students ====<br/>
+          {JSON.stringify(seating.unassignedStudents)}
+      </div>
+      <div>
+          <br/>==== Seats ====<br/>
+          {JSON.stringify(seating.desks)}
       </div>
     </div>
     </>
