@@ -46,16 +46,12 @@ export function insertSort(student: Student, array: Student[]): [number, Student
   return [index, newArray]
 }
 
-export function insertSortReferences(studentReference: StudentReference, array: StudentReference[]): [number, StudentReference[]] {
+export function insertSortReferences(studentReference: StudentReference, array: StudentReference[]): StudentReference[] {
 
   // find the index
   const newArray: StudentReference[] = [...array]
-  let index: number = 0
-  while (index < newArray.length && compareStudentReferences(studentReference, newArray[index]) <= 0) index++
-
-  // insert at index there
-  newArray.splice(index, 0, studentReference)
-  return [index, newArray]
+  newArray.push(studentReference)
+  return sortStudentReferences(newArray)
 }
 
 

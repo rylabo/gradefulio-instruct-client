@@ -7,35 +7,29 @@ interface UnassignedPanelProps {
   seatingAssignment: SeatingPlusPreview
   onStudentDragStart: (studentIndex: number, students: Student[], deskRow: number, deskCol: number) => (event: React.DragEvent) => void
   onStudentDragEnd: () => (event: React.DragEvent) => void
-  // onStudentDragOverDesk:(
-  //   sourceDeskInfo: AssignedDeskInfo | undefined,
-  //   destinationStudentIndex?: number
-  // ) => (event: React.DragEvent) => void
-  // onStudentDragOverUnassigned: (
-  //   sourceDeskInfo: AssignedDeskInfo | undefined,
-  //   destinationColumn?: number
-  // ) => (event: React.DragEvent) => void
+  onStudentDragOverUnassigned: (sourceDeskInfo: AssignedDeskInfo | undefined) => (event: React.DragEvent) => void
   // onStudentDragIntoUnassigned: (
   //   sourceDeskInfo: AssignedDeskInfo | undefined,
   //   destinationDeskColumn: number,
   //   destinationStudentIndex?: number
   // ) => (event: React.DragEvent) => void
   // onStudentDragOutOfDesk: () => (event: React.DragEvent) => void,
-  // onStudentDrop: (
-  //   destinationDeskRow: number,
-  //   destinationDeskColumn: number,
-  //   destinationStudentIndex?: number
-  // ) => (event: React.DragEvent) => void
+  onStudentDrop: (
+    destinationDeskRow: number,
+    destinationDeskColumn: number,
+    destinationStudentIndex?: number
+  ) => (event: React.DragEvent) => void
 }
 
 function UnassignedPanel({
   seatingAssignment,
   onStudentDragStart,
   onStudentDragEnd,
+  onStudentDragOverUnassigned,
   // onStudentDragOverUnassigned,
   // onStudentDragIntoUnassigned,
   // onStudentDragOutOfDesk, 
-  // onStudentDrop
+  onStudentDrop
 }: UnassignedPanelProps) {
   const unassignedStudentChips: JSX.Element[] = getUnassignedStudentChips(seatingAssignment.students, seatingAssignment.unassignedStudents, seatingAssignment.sourcePreview, seatingAssignment.unnassignedArrayIndex)
 
@@ -81,8 +75,9 @@ function UnassignedPanel({
     >
       <div 
         className='flex'
-        // onDragOver={onStudentDragOverUnassigned(seatingAssignment.draggedStudentInfo, seatingAssignment.destinationPreview?.deskColumn)}
+        onDragOver={onStudentDragOverUnassigned(seatingAssignment.draggedStudentInfo)}
         // onDragEnter={onStudentDragIntoUnassigned(seatingAssignment.draggedStudentInfo, seatingAssignment.)}
+        onDrop={onStudentDrop(-1, -1)}
       >
         {unassignedStudentChips}
      </div>
