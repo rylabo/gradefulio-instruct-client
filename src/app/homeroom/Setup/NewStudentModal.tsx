@@ -101,6 +101,7 @@ const initialClassEnrollmentState: ClassEnrollmentState = {
 interface NewStudentModalProps {
   isOpen: boolean
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
+  isDismissable: boolean
   enrollment: NewStudent[]
   onNextPressed: (enrollment: (NewStudent)[]) => void
   onCancel: () => void 
@@ -138,7 +139,7 @@ function readStudentListFile(file: ArrayBuffer | undefined): (NewStudent)[] {
   return spreadsheetStudentList
 }
 
-function NewStudentModal({isOpen, size, enrollment, onNextPressed, onCancel}: NewStudentModalProps) {
+function NewStudentModal({isOpen, size, isDismissable, enrollment, onNextPressed, onCancel}: NewStudentModalProps) {
   const [newClassEnrollmentState, dispatchClassEnrollmentChange] = useReducer<(state: ClassEnrollmentState, action: ClassEnrollmentAction) => ClassEnrollmentState>(classEnrollmentReducer, initialClassEnrollmentState)
 
   useEffect(() => {
@@ -195,7 +196,7 @@ function NewStudentModal({isOpen, size, enrollment, onNextPressed, onCancel}: Ne
   }
 
   return (
-    <Modal id='add-new-students' isOpen={isOpen} size={size} onClose={onCancel}>
+    <Modal id='add-new-students' isOpen={isOpen} size={size} isDismissable={isDismissable} onClose={onCancel}>
       <ModalContent>
         <ModalHeader>
           Create a New Class

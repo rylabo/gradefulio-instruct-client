@@ -88,6 +88,7 @@ const deskLayoutReducer = (layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanCha
 interface DeskGridModalProps {
   isOpen: boolean
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
+  isDismissable: boolean
   deskRows: number
   deskColumns: number
   enrollment: StudentObj[]
@@ -97,7 +98,7 @@ interface DeskGridModalProps {
   onCancel: () => void
 }
 
-function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, onNextPressed, onBackPressed, onCancel }: DeskGridModalProps) {
+function DeskGridModal({isOpen, size, isDismissable, deskRows, deskColumns, enrollment, desks, onNextPressed, onBackPressed, onCancel }: DeskGridModalProps) {
   const [deskLayoutPlan, dispatchLayoutChange] = useReducer<(layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanChange) => DeskLayoutPlan>(deskLayoutReducer, {deskLayout: {rows: deskRows, columns: deskColumns}, desks: desks})
   useEffect(() => {
     dispatchLayoutChange({type: 'find_initial_desk_layout' , studentList: enrollment})
@@ -131,7 +132,7 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
   }
 
   return (
-    <Modal id='set-desk-layout' isOpen={isOpen} size={size} onClose={onCancel}>
+    <Modal id='set-desk-layout' isOpen={isOpen} size={size} isDismissable={isDismissable} onClose={onCancel}>
       <ModalContent>
         <ModalHeader>
           Set Desk Layout

@@ -298,6 +298,7 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
 interface AssignSeatProps {
   isOpen: boolean
   size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full' | undefined
+  isDismissable: boolean
   students: Student []
   desks: (DeskTemplate | {})[][]
   onBackPressed?: () => void
@@ -305,7 +306,7 @@ interface AssignSeatProps {
   onCancel: () => void
 }
 
-function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinishPressed, onCancel } : AssignSeatProps) {
+function SeatAssignModal({ isOpen, size, students, desks, isDismissable, onBackPressed, onFinishPressed, onCancel } : AssignSeatProps) {
   const [seating, dispatchAssignment] = useReducer<(seating: SeatingPlusPreview, action: AssignAction) => SeatingPlusPreview>(seatingReducer, {desks: desks, unassignedStudents: [], students: students, draggingOver: false})
 
   useEffect(() => {
@@ -435,7 +436,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
 
   return (
     <>
-    <Modal id='assign-desks' isOpen={isOpen} size={size} onClose={onCancel}>
+    <Modal id='assign-desks' isOpen={isOpen} size={size} isDismissable={isDismissable} onClose={onCancel}>
       <ModalContent>
         <ModalHeader>
           Assign Desks
