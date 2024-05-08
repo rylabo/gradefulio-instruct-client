@@ -63,7 +63,7 @@ export interface SeatingPlusPreview {
   sourcePreview?: DeskInfo | undefined
   destinationPreview?: AssignedDeskInfo | undefined
   draggingOver: boolean
-  unnassignedArrayIndex?: number
-  
+  unassignedArrayIndex?: number  
   unassignedStudents: StudentReference[]
+  unassignedPreview?: StudentReference[]
 }

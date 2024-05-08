@@ -21,7 +21,7 @@ const config: Config = {
       keyframes: {
         'disappear-h-7': {
           '0%, 95%': { height: '1.75rem'},
-          '100%': { height: '0px', visibility: 'hidden'}
+          '100%': { height: '0px', width: '0px', padding: '0px', visibility: 'hidden'}
         }
       }
     },
