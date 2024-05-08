@@ -487,37 +487,6 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
       </ModalContent>
 
     </Modal>
-    <div style={{height: 100}}></div>
-    <div className='grid grid-rows-3 grid-cols-3'>
-      <div className='row-start-1 col-start-1'>
-        <br/>
-        **** Student Being Dragged ****<br/>
-        {JSON.stringify(seating.draggedStudentInfo)}
-      </div>
-      <div className='row-start-1 col-start-2'>
-        <br/>**** Displaced Student ****<br/>
-        {JSON.stringify(seating.displacedStudentInfo)}
-      </div>
-      <div className='row-start-2 col-start-1'>
-        <br/>**** Source Desk Preview Data ****<br/>
-        {JSON.stringify(seating.sourcePreview)}
-      </div>
-      <div className='row-start-2 col-start-3'>
-        <br/>**** Destination Desk Preview Data ****<br/>
-        {JSON.stringify(seating.destinationPreview)}
-      </div>
-      <div className='row-start-3'>
-        <br/>{JSON.stringify('Over valid drop target:' + seating.draggingOver)}
-      </div>
-      <div>
-          <br/>==== Unassigned Students ====<br/>
-          {JSON.stringify(seating.unassignedStudents)}
-      </div>
-      <div>
-          <br/>==== Seats ====<br/>
-          {JSON.stringify(seating.desks)}
-      </div>
-    </div>
     </>
   )
 }

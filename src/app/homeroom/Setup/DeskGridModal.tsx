@@ -48,19 +48,29 @@ const deskLayoutReducer = (layoutPlan: DeskLayoutPlan, change: DeskLayoutPlanCha
 
     case 'change_intent_for_desk_layout_cell' :{
       const newLayoutPlan = {...layoutPlan}
-      const newDesks = deepCopyDeskLayout(layoutPlan.desks)
+      const newDesks: (DeskTemplate | {})[][] = deepCopyDeskLayout(layoutPlan.desks)
       newLayoutPlan.deskLayout = {...layoutPlan.deskLayout}
       newLayoutPlan.desks = {...layoutPlan.desks}
       console.log(JSON.stringify(change, null, 2))
       switch (change.newIntent) {
         case 1:
-          newDesks[change.templateRow][change.templateColumn] = {assign: false}
+          newDesks[change.templateRow][change.templateColumn] = {
+            row: change.templateRow,
+            column: change.templateColumn,
+            assignmentConfirmed: false,
+            assign: false
+          }
           break
         case 2:
           newDesks[change.templateRow][change.templateColumn] = {}
           break
         default: 
-          newDesks[change.templateRow][change.templateColumn] = {assign: true}
+          newDesks[change.templateRow][change.templateColumn] = {
+            row: change.templateRow,
+            column: change.templateColumn,
+            assignmentConfirmed: false,
+            assign: true
+          }
           break
 
       }
@@ -155,6 +165,9 @@ function DeskGridModal({isOpen, size, deskRows, deskColumns, enrollment, desks, 
             Cancel
           </Button>
         </ModalFooter>
+        <div>
+          {JSON.stringify(deskLayoutPlan.desks)}
+        </div>
       </ModalContent>
     </Modal>
   )
