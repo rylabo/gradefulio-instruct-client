@@ -186,6 +186,7 @@ const NewCourseDialog = () => {
       <NewCourseDialog.NewStudentModal
         isOpen={currentDialogStep === 1}
         size='5xl'
+        isDismissable={false}
         onNextPressed={enrollmentFinalizedHandler}
         enrollment={newClassState.studentEnrollment}
         onCancel={cancelHandler}
@@ -193,6 +194,7 @@ const NewCourseDialog = () => {
       <NewCourseDialog.DeskGridModal
         isOpen={currentDialogStep === 2}
         size='5xl'
+        isDismissable={false}
         deskRows={newClassState.deskRows}
         deskColumns={newClassState.deskColumns}
         enrollment={newClassState.studentEnrollment}
@@ -204,6 +206,7 @@ const NewCourseDialog = () => {
       <NewCourseDialog.SeatAssignModal
         isOpen={currentDialogStep === 3}
         size='5xl'
+        isDismissable={false}
         students={seatingPlanState.students}
         desks={seatingPlanState.deskAt}
         onBackPressed={seatAssignModalPreviousHandler}
