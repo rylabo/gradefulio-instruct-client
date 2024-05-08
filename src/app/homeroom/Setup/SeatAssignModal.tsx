@@ -1,6 +1,6 @@
 import React, { useEffect, useReducer } from 'react'
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react'
-import { insertSort, insertSortReferences, Student } from '../../../lib/StudentObj'
+import { insertSortReferences, insertSortWithIndex, Student } from '../../../lib/StudentObj'
 import { AssignedDeskInfo, DeskTemplate, SeatingPlan, SeatingPlusPreview, StudentReference } from '../../../lib/SeatingPlan'
 import { deepCopyDeskLayout, isDeskTemplate } from '../../../util/deskLayout'
 import SeatAssignPanel from './SeatAssignPanel'
@@ -10,7 +10,7 @@ import UnassignedPanel from './UnassignedPanel'
 function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]): [(DeskTemplate | {})[][], StudentReference[]] {
   let studentNumber: number = 0
   const newSeating: (DeskTemplate | {})[][] = deepCopyDeskLayout(desks)
-  const unassignedSeating: StudentReference[] = []
+  let unassignedSeating: StudentReference[] = []
   for (let j = 0; j < newSeating[0].length; j++) {
     for (let i = 0; i < newSeating.length; i++) {
       const obj: DeskTemplate | {} = newSeating[i][j]
@@ -24,10 +24,10 @@ function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]):
   }
 
   for (studentNumber; studentNumber < students.length; studentNumber++) {
-    unassignedSeating.push({
+    unassignedSeating = insertSortReferences({
       student: students[studentNumber],
       studentIndex: studentNumber
-    })
+    }, unassignedSeating)
   }
   return [newSeating, unassignedSeating]
 }
@@ -40,7 +40,10 @@ function deepCopyState(state: SeatingPlusPreview): SeatingPlusPreview {
 
   stateCopy.students = [...state.students]
   stateCopy.unassignedStudents = [...state.unassignedStudents]
-  stateCopy.unnassignedArrayIndex = state.unnassignedArrayIndex
+  if (state.unassignedPreview) {
+    stateCopy.unassignedPreview = [...state.unassignedPreview]
+  }
+  stateCopy.unassignedArrayIndex = state.unassignedArrayIndex
   stateCopy.draggingOver = state.draggingOver
   return stateCopy
 }
@@ -62,8 +65,8 @@ type AssignAction =
       destinationDeskColumn: number
     }
   | { type: 'move_outside_desk' }
-  | { type: 'move_over_unnassigned_area', unnassignedStudentsIndex: number }
-  | { type: 'move_outside_unnassigned_area' }
+  | { type: 'move_over_unassigned_area' }
+  | { type: 'move_outside_unassigned_area' }
   | { 
       type: 'move_finalize'
       sourceDeskInfo: AssignedDeskInfo
@@ -128,7 +131,7 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
           newSeatingAssignment.draggingOver = true
           // store student info from destination desk
           newSeatingAssignment.displacedStudentInfo = {
-            studentIndex: action.destinationStudentIndex,
+            studentIndex: action?.destinationStudentIndex,
             deskRow: action.destinationDeskRow,
             deskColumn: action.destinationDeskColumn
           }
@@ -221,18 +224,31 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
             newSeatingAssignment.unassignedStudents.splice(action.sourceDeskInfo.deskColumn, 1)
             if (swappedStudent && action.destinationStudentIndex !== undefined) {
               // unnassigned student has been dropped on a desk occupied by a student
-              const [unassignedIndex, unassignedStudents] = insertSortReferences(
+              newSeatingAssignment.unassignedStudents = insertSortReferences(
                 { student: swappedStudent, studentIndex: action.destinationStudentIndex },
                 newSeatingAssignment.unassignedStudents
               )
-              newSeatingAssignment.unassignedStudents = unassignedStudents
             }
 
             destinationDesk.assignedTo = action.sourceDeskInfo.student
             destinationDesk.studentIndex = action.sourceDeskInfo.studentIndex
           }
         } else if (action.sourceDeskInfo.deskRow >= 0 && action.destinationDeskRow < 0){
-          // TODO implement drag from desk to staging area for unassigned students
+          const sourceDesk: DeskTemplate | {} = 
+          newSeatingAssignment.desks
+            [action.sourceDeskInfo.deskRow]
+            [action.sourceDeskInfo.deskColumn]
+
+          if (isDeskTemplate(sourceDesk)) {
+            if (newSeatingAssignment.unassignedArrayIndex !== undefined)
+              newSeatingAssignment.unassignedStudents.splice(newSeatingAssignment.unassignedArrayIndex, 1)
+            newSeatingAssignment.unassignedStudents = insertSortReferences(
+              { student: action.sourceDeskInfo.student, studentIndex: action.sourceDeskInfo.studentIndex },
+              newSeatingAssignment.unassignedStudents
+            )
+            sourceDesk.assignedTo = undefined
+            sourceDesk.studentIndex = undefined
+          }
         }
 
         // wipe preview states
@@ -241,26 +257,38 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
         newSeatingAssignment.displacedStudentInfo = undefined
         newSeatingAssignment.sourcePreview = undefined
         newSeatingAssignment.destinationPreview = undefined
+        newSeatingAssignment.unassignedPreview = undefined
+        newSeatingAssignment.unassignedArrayIndex = undefined
 
         return newSeatingAssignment
       }
     }
 
-    // case 'move_over_unnassigned_area': {
-    //   const newSeatingAssignment: SeatingPlusPreview = deepCopyState(seating)
+    case 'move_over_unassigned_area': {
+      const newSeatingAssignment: SeatingPlusPreview = deepCopyState(seating)
+      if (!newSeatingAssignment.draggingOver){
+        if (seating.draggedStudentInfo && seating.draggedStudentInfo.deskRow !== -1){
+          newSeatingAssignment.draggingOver = true
+          
+          const [unassignedArrayIndex, unassignedPreview] = insertSortWithIndex({student: seating.draggedStudentInfo.student, studentIndex: seating.draggedStudentInfo.studentIndex}, [...seating.unassignedStudents])
+          newSeatingAssignment.unassignedStudents = unassignedPreview
+          newSeatingAssignment.unassignedArrayIndex = unassignedArrayIndex
+        }  
+      }
+      return newSeatingAssignment
+    }
 
-    //   if (seating.draggedStudentInfo){
-    //     [newSeatingAssignment.unnassignedArrayIndex, newSeatingAssignment.unassignedStudents] = 
-    //       insertSort(seating.draggedStudentInfo.student, seating.unassignedStudents)
-    //   }
-    //   return newSeatingAssignment
-    // }
-    // case 'move_outside_unnassigned_area': {
-    //   const newSeatingAssignment: SeatingPlusPreview = deepCopyState(seating)
-    //   if (seating.unnassignedArrayIndex)
-    //   newSeatingAssignment.unassignedStudents.splice(seating.unnassignedArrayIndex, 1)
-    //   newSeatingAssignment.unnassignedArrayIndex = undefined
-    // }
+    case 'move_outside_unassigned_area': {
+      const newSeatingAssignment: SeatingPlusPreview = deepCopyState(seating)
+      if (newSeatingAssignment.draggingOver){
+        newSeatingAssignment.draggingOver = false
+        if (newSeatingAssignment.unassignedArrayIndex !== undefined)
+          newSeatingAssignment.unassignedStudents.splice(newSeatingAssignment.unassignedArrayIndex, 1)
+        newSeatingAssignment.unassignedPreview = undefined
+        newSeatingAssignment.unassignedArrayIndex = undefined
+      }
+      return newSeatingAssignment
+    }
 
     default:
       return seating
@@ -308,14 +336,44 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
   
   function handleDragOverDesk(
     sourceDeskInfo: AssignedDeskInfo | undefined,
-    destinationStudentIndex?: number
+    destinationDeskRow: number,
+    destinationDeskColumn: number
   ): (event: React.DragEvent) => void {
     return (event: React.DragEvent) => {
-      if (!event.isDefaultPrevented() && sourceDeskInfo && destinationStudentIndex !== sourceDeskInfo.studentIndex) {
+      if (!event.isDefaultPrevented() && sourceDeskInfo && !(destinationDeskRow === sourceDeskInfo.deskRow && destinationDeskColumn === sourceDeskInfo.deskColumn)) {
         event.stopPropagation()
         event.preventDefault()
       }
     }
+  }
+
+  function handleDragOverUnassigned(
+    sourceDeskInfo: AssignedDeskInfo | undefined
+  ): (event: React.DragEvent) => void {
+    return (event: React.DragEvent) => {
+      if (!event.isDefaultPrevented() && sourceDeskInfo && sourceDeskInfo.deskRow !== -1) {
+        event.stopPropagation()
+        event.preventDefault()
+      }
+    }
+  }
+
+  function handleDragIntoUnassigned(
+    sourceDeskInfo: AssignedDeskInfo | undefined
+  ): (event: React.DragEvent) => void {
+    return (event: React.DragEvent) => {
+      if (!event.isDefaultPrevented() && sourceDeskInfo && sourceDeskInfo.deskRow !== -1) {
+        event.stopPropagation()
+        dispatchAssignment({type: 'move_over_unassigned_area'})
+      }
+    }    
+  }
+
+  function handleDragOutOfUnassigned(): (event: React.DragEvent) => void {
+    return (event: React.DragEvent) => {
+      event.stopPropagation()
+        dispatchAssignment({type: 'move_outside_unassigned_area'})
+    }    
   }
 
 
@@ -342,7 +400,6 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
   function handleDragOutOfDesk(): (event: React.DragEvent) => void {
     return (event: React.DragEvent) => {
       event.stopPropagation()
-      // event.preventDefault()
       console.log("Drag Leave Fired")
       dispatchAssignment({type: 'move_outside_desk'})
     }
@@ -383,7 +440,7 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
         <ModalHeader>
           Assign Desks
         </ModalHeader>
-        <ModalBody>
+        <ModalBody className='flex'>
           <SeatAssignPanel
             seatingAssignment={seating}
             onStudentDragStart={handleDrag}
@@ -398,6 +455,10 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
             seatingAssignment={seating}
             onStudentDragStart={handleDrag}
             onStudentDragEnd={handleDragEnd}
+            onStudentDragOverUnassigned={handleDragOverUnassigned}
+            onStudentDrop={handleDrop}
+            onStudentDragIntoUnassigned={handleDragIntoUnassigned}
+            onStudentDragOutOfUnassigned={handleDragOutOfUnassigned}
           />
         </ModalBody>
         <ModalFooter>
@@ -426,37 +487,6 @@ function SeatAssignModal({ isOpen, size, students, desks, onBackPressed, onFinis
       </ModalContent>
 
     </Modal>
-    <div style={{height: 100}}></div>
-    <div className='grid grid-rows-3 grid-cols-3'>
-      <div className='row-start-1 col-start-1'>
-        <br/>
-        **** Student Being Dragged ****<br/>
-        {JSON.stringify(seating.draggedStudentInfo)}
-      </div>
-      <div className='row-start-1 col-start-2'>
-        <br/>**** Displaced Student ****<br/>
-        {JSON.stringify(seating.displacedStudentInfo)}
-      </div>
-      <div className='row-start-2 col-start-1'>
-        <br/>**** Source Desk Preview Data ****<br/>
-        {JSON.stringify(seating.sourcePreview)}
-      </div>
-      <div className='row-start-2 col-start-2'>
-        <br/>**** Destination Desk Preview Data ****<br/>
-        {JSON.stringify(seating.destinationPreview)}
-      </div>
-      <div className='row-start-3'>
-        <br/>{JSON.stringify('Over valid drop target:' + seating.draggingOver)}
-      </div>
-      <div>
-          <br/>==== Unassigned Students ====<br/>
-          {JSON.stringify(seating.unassignedStudents)}
-      </div>
-      <div>
-          <br/>==== Seats ====<br/>
-          {JSON.stringify(seating.desks)}
-      </div>
-    </div>
     </>
   )
 }
