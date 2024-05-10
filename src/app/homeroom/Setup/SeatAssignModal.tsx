@@ -97,7 +97,7 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
         student: seating.students[action.studentIndex]
       }
 
-      // set the desk preview to be the seat without a student
+      // set the desk preview. This is what the desk will look like after the student had been moved
       newSeatingAssignment.sourcePreview = {
         deskRow: action.deskRow,
         deskColumn: action.deskColumn
@@ -108,7 +108,6 @@ function seatingReducer(seating: SeatingPlusPreview, action: AssignAction): Seat
     case 'move_cancel' : {
       const newSeatingAssignment: SeatingPlusPreview = deepCopyState(seating)
 
-    // put student back
     // wipe the sourceDeskInfo and destinationDeskInfo
       newSeatingAssignment.draggedStudentInfo = undefined
       newSeatingAssignment.displacedStudentInfo = undefined

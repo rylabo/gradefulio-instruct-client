@@ -56,14 +56,14 @@ export interface StudentReference {
 export type AssignedDeskInfo = DeskInfo & StudentReference
 
 export interface SeatingPlusPreview {
-  desks: (DeskTemplate | {})[][]
-  students: Student[]
-  draggedStudentInfo?: AssignedDeskInfo | undefined
-  displacedStudentInfo?: DeskInfo | undefined
-  sourcePreview?: DeskInfo | undefined
-  destinationPreview?: AssignedDeskInfo | undefined
-  draggingOver: boolean
-  unassignedArrayIndex?: number  
-  unassignedStudents: StudentReference[]
+  desks: (DeskTemplate | {})[][]  // the desks arrangement in the classroom. Empty objects denote no desk
+  students: Student[]             // the students enrolled in the course
+  draggedStudentInfo?: AssignedDeskInfo | undefined   // the info related to the student currently being dragged. 
+  displacedStudentInfo?: DeskInfo | undefined         // the student potentially being kicked out of their desk 
+  sourcePreview?: DeskInfo | undefined                // the desk the currently dragged student was dragged from will look like after the student is dropped.
+  destinationPreview?: AssignedDeskInfo | undefined   // what the desk 
+  draggingOver: boolean                               // true is a student is currently being dragged over a valid drop target
+  unassignedArrayIndex?: number                       // an index of a student currently being dragged over the unassigned student list.
+  unassignedStudents: StudentReference[]              // a list if currently unassigned students, in increasing order, sorted on their names in Katakana.
   unassignedPreview?: StudentReference[]
 }

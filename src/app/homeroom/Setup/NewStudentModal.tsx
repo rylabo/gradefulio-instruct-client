@@ -4,12 +4,12 @@ import { NewStudent, Student } from '../../../lib/StudentObj';
 import { read, utils } from 'xlsx';
 
 interface NewStudentListItem {
-  '姓': string
-  '名': string
-  '姓（かたかな）': string
-  '名（かたかな）': string
-  '姓（ローマ字）': string
-  '名（ローマ字）': string
+  '姓'?: string
+  '名'?: string
+  '姓（かたかな）'?: string
+  '名（かたかな）'?: string
+  '姓（ローマ字）'?: string
+  '名（ローマ字）'?: string
 }
 
 interface ClassEnrollmentState {
@@ -18,6 +18,7 @@ interface ClassEnrollmentState {
 
 type ClassEnrollmentAction = 
   | {type: 'add_new_students_from_spreadsheet'; newStudents: (NewStudent)[]}
+  | {type: 'add_new_student'}
   | {type: 'initialize_new_students'; newStudents: (NewStudent)[]}
   | {type: 'update_new_student_family_name'; newStudentArrayindex: number; newValue: string }
   | {type: 'update_new_student_family_name_katakana'; newStudentArrayindex: number; newValue: string }
@@ -32,6 +33,29 @@ const classEnrollmentReducer = (state: ClassEnrollmentState, action: ClassEnroll
     case 'add_new_students_from_spreadsheet': {
       const newState: ClassEnrollmentState = {...state}
       newState.newStudents= action.newStudents      
+      return newState
+    }
+
+    case 'add_new_student': {
+      const newState: ClassEnrollmentState = {...state}
+      newState.newStudents = [...state.newStudents]
+      newState.newStudents.push({
+        '@type': ['Student'],
+        'familyNames': [{
+          'annotation': '',
+          'nameToken': {
+            'en': '',
+            'ja': ''
+          }
+        }],
+        'givenNames': [{
+          'annotation': '',
+          'nameToken': {
+            'en': '',
+            'ja': ''
+          }
+        }]
+      })      
       return newState
     }
 
@@ -88,7 +112,6 @@ const classEnrollmentReducer = (state: ClassEnrollmentState, action: ClassEnroll
       return {
         ...state
       }   
-
   }
 
 }
@@ -118,19 +141,19 @@ function readStudentListFile(file: ArrayBuffer | undefined): (NewStudent)[] {
       ],
       "givenNames": [
         {
-          "annotation": item['名（かたかな）'],
+          "annotation": item['名（かたかな）'] ? item['名（かたかな）'] : '',
           "nameToken": {
-            "en": item['名（ローマ字）'],
-            "ja": item['名']
+            "en": item['名（ローマ字）'] ? item['名（ローマ字）'] : '',
+            "ja": item['名'] ? item['名'] : ''
           }
         }
       ],
       "familyNames": [
         {
-          "annotation": item['姓（かたかな）'],
+          "annotation": item['姓（かたかな）'] ? item['姓（かたかな）'] : '',
           "nameToken": {
-            "en": item['姓（ローマ字）'],
-            "ja": item['姓']
+            "en": item['姓（ローマ字）'] ? item['姓（ローマ字）'] : '',
+            "ja": item['姓'] ? item['姓'] : ''
           }
         }
       ],
@@ -151,7 +174,7 @@ function NewStudentModal({isOpen, size, isDismissable, enrollment, onNextPressed
     const formGroups: JSX.Element[] = []
     for (let i = 0; i < newStudents.length; i++) {
       formGroups.push((
-        <div key={'newStudentFormGroup' + i} className='flex' >
+        <fieldset key={'newStudentFormGroup' + i} className='flex' >
           <Input 
             type='text'
             placeholder='Family Name'
@@ -189,7 +212,7 @@ function NewStudentModal({isOpen, size, isDismissable, enrollment, onNextPressed
             onChange={(event) => {dispatchClassEnrollmentChange({type: 'update_new_student_given_name_romaji', newStudentArrayindex: i, newValue: event.target.value})}} 
           />
           <Button color='danger' onPress={() => {dispatchClassEnrollmentChange({type: 'delete_new_student', newStudentArrayindex: i})}}>Delete</Button>
-      </div>
+      </fieldset>
       ))
     }
     return formGroups
@@ -209,9 +232,13 @@ function NewStudentModal({isOpen, size, isDismissable, enrollment, onNextPressed
                 newStudents: readStudentListFile(await event.target.files?.item(0)?.arrayBuffer())
               })
             }}/>
-            <div>
+            <form>
               {getNewStudentFormGroups(newClassEnrollmentState.newStudents)}
-            </div>
+            </form>
+            <Button color='primary' onPress={() => {
+              console.log('add new student press event')
+              dispatchClassEnrollmentChange({type: 'add_new_student'})
+            }}>Add Student</Button>
           </div>
         </ModalBody>
         <ModalFooter>
