@@ -16,10 +16,10 @@ export type Student =
   | ExistingStudent
 
 export type StudentObj = {
-  '@type': [string];
+  '@type': string[];
   attendanceNumber?: string;
-  familyNames: [Name];
-  givenNames: [Name];
+  familyNames: Name[];
+  givenNames: Name[];
   status?: string;
 };
 
