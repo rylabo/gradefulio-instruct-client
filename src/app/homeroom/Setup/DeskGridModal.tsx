@@ -166,9 +166,6 @@ function DeskGridModal({isOpen, size, isDismissable, deskRows, deskColumns, enro
             Cancel
           </Button>
         </ModalFooter>
-        <div>
-          {JSON.stringify(deskLayoutPlan.desks)}
-        </div>
       </ModalContent>
     </Modal>
   )
