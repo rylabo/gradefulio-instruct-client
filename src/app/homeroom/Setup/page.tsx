@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, DragEvent, useReducer } from 'react'
+import React, { useState, DragEvent, useReducer, useEffect } from 'react'
 import { NewStudent, sortStudents, Student, StudentObj } from '../../../lib/StudentObj';
 import { Button } from '@nextui-org/react';
 import NewStudentModal, { ClassEnrollmentState } from './NewStudentModal';
@@ -8,6 +8,7 @@ import DeskGridModal from './DeskGridModal';
 import { deepCopyDeskLayout, getDefaultGridSpec, initializeDeskPlan, isDeskTemplate } from '../../../util/deskLayout';
 import SeatAssignModal from './SeatAssignModal';
 import { CourseState, Name, SchoolGrade } from '../../../lib/Course';
+import axios from 'axios';
 
 const initialConfigState: CourseState = {
   courseName: {
@@ -28,6 +29,7 @@ type ClassroomConfigAction =
   | {type: 'cancel_configuration'}
   | {type: 'finalize_desk_layout', rows: number, columns: number, desks: (DeskTemplate | {})[][]}
   | {type: 'finalize_student_list', newCourseInfo: ClassEnrollmentState}
+  | {type: 'finalize_seating_assignments', seatingPlan: SeatingPlan}
 
 
 const newClassReducer = (state: CourseState, action: ClassroomConfigAction): CourseState => {
@@ -59,6 +61,12 @@ const newClassReducer = (state: CourseState, action: ClassroomConfigAction): Cou
       newState.deskColumns = deskGrid.columns
       newState.deskAt = initializeDeskPlan({rows: deskGrid.rows, columns: deskGrid.columns})
       return newState
+    }
+
+    case 'finalize_seating_assignments':{
+      const newState: CourseState = {...state}
+      newState.studentEnrollment = action.seatingPlan.students
+      newState.deskAt = action.seatingPlan.deskAt
     }
 
     default:
@@ -125,7 +133,19 @@ const NewCourseDialog = () => {
 
   const [newClassState, dispatchNewClassAction] = useReducer<(state: CourseState, action: ClassroomConfigAction) => CourseState>(newClassReducer, initialConfigState)
   const [seatingPlanState, dispatchSeatingPlanChange] = useReducer<(state: SeatingPlan, action: SeatingPlanChange) => SeatingPlan>(seatingStateReducer, initialSeatingPlan)
+  const [detailsFinalized, setDetailsFinalized] = useState<boolean>(false)
 
+  useEffect(() => {
+    if (detailsFinalized) {
+      axios.post('/api/course', newClassState)
+      .then(response => {
+        console.log('Seating plan submitted successfully:', response.data);
+      })
+      .catch(error => {
+        console.error('Error submitting seating plan:', error);
+      });
+    }
+  }, [detailsFinalized])
   function enrollmentFinalizedHandler(enrollment: ClassEnrollmentState): void {
     dispatchNewClassAction({type:'finalize_student_list', newCourseInfo: enrollment})
     setCurrentDialogStep(2)
@@ -147,6 +167,8 @@ const NewCourseDialog = () => {
 
   function seatAssignModalProceedHandler(seatingPlan: SeatingPlan): void {
     dispatchSeatingPlanChange({type: 'finalize_seating_plan', newLayout: seatingPlan})
+    dispatchNewClassAction({type: 'finalize_seating_assignments', seatingPlan: seatingPlan})
+    setDetailsFinalized(true)
     setCurrentDialogStep(0)
   }
   
@@ -162,7 +184,7 @@ const NewCourseDialog = () => {
         size='full'
         isDismissable={false}
         onNextPressed={enrollmentFinalizedHandler}
-        enrollment={newClassState.studentEnrollment}
+        enrollment={newClassState.studentEnrollment as NewStudent[]}
         onCancel={cancelHandler}
       />
       <NewCourseDialog.DeskGridModal

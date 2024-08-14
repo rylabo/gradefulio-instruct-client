@@ -1,5 +1,5 @@
 import { DeskTemplate } from "./SeatingPlan"
-import { NewStudent } from "./StudentObj"
+import { NewStudent, Student } from "./StudentObj"
 
 export type Name = 
   | {
@@ -56,7 +56,7 @@ export interface CourseState {
   courseName: Name
   gradeLevel: SchoolGrade
   classNumber: number | undefined
-  studentEnrollment: NewStudent[]
+  studentEnrollment: Student[]
   deskRows: number
   deskColumns: number
   deskAt: (DeskTemplate | {}) [][]
