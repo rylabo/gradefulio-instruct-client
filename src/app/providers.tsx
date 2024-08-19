@@ -2,12 +2,15 @@
 
 import { NextUIProvider } from '@nextui-org/react'
 import { useRouter } from 'next/navigation'
+import MockProvider from './mocks/mockProvider';
 
 export function Providers({children}: { children: React.ReactNode }) {
   const router = useRouter();
   return (
     <NextUIProvider navigate={router.push}>
-      {children}
+      <MockProvider>
+        {children}
+      </MockProvider>
     </NextUIProvider>
   )
 }

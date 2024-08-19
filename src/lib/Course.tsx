@@ -1,4 +1,4 @@
-import { DeskTemplate } from "./SeatingPlan"
+import { DeskTemplate, IdentifiedNode } from "./SeatingPlan"
 import { NewStudent, Student } from "./StudentObj"
 
 export type Name = 
@@ -62,3 +62,90 @@ export interface CourseState {
   deskAt: (DeskTemplate | {}) [][]
 }
 
+/*
+{
+  "@type": ["Course"],
+  "courseName": {
+    "ja": "英語",
+    "en": "English"
+  },
+  "gradeLevel": "中1",
+  "classNumber": 1,
+  "deskRows": 3,
+  "deskColumns": 3,
+  "deskAt": [[
+    {"@type": ["Desk"], "assignedTo":{
+        "@type": ["Student"],
+        "givenNames": [{
+          "annotation": "ケンタロ",
+          "nameToken": {"en": "Kentaro", "ja": "健太郎"}
+        }],
+        "familyNames": [{
+          "annotation": "サトウ",
+          "nameToken": {"en": "Satou", "ja": "佐藤"}
+        }],
+    }},
+    {"@type": ["Desk"], "assignedTo":{
+        "@type": ["Student"],
+        "givenNames": [{
+          "annotation": "ユウ",
+          "nameToken": {"en": "Yuu", "ja": "ゆう"}
+        }],
+        "familyNames": [{
+          "annotation": "タナカ",
+          "nameToken": {"en": "Tanaka", "ja": "田中"}
+        }],
+    }},
+    {"@type": ["Desk"], "assignedTo":{
+        "@type": ["Student"],
+        "givenNames": [{
+          "annotation": "ハナコ",
+          "nameToken": {"en": "Hanako", "ja": "花子"}
+        }],
+        "familyNames": [{
+          "annotation": "ヤマダ",
+          "nameToken": {"en": "Yamada", "ja": "山田"}
+        }],
+    }}
+  ], [
+    {"@type": ["Desk"], "assignedTo":{
+        "@type": ["Student"],
+        "givenNames": [{
+          "annotation": "マリコ",
+          "nameToken": {"en": "Mariko", "ja": "まり子"}
+        }],
+        "familyNames": [{
+          "annotation": "スズキ",
+          "nameToken": {"en": "Suzuki", "ja": "鈴木"}
+        }],
+    }},
+    {"@type": ["Desk"], "assignedTo":{
+        "@type": ["Student"],
+        "givenNames": [{
+          "annotation": "タロウ",
+          "nameToken": {"en": "Tarou", "ja": "太郎"}
+        }],
+        "familyNames": [{
+          "annotation": "ヤマダ",
+          "nameToken": {"en": "Yamada", "ja": "山田"}
+        }],
+    }},
+    {"@type": ["Desk"]}
+  ], [
+    {},
+    {"@type": ["Desk"]},
+    {}
+  ]]
+}
+*/
+
+
+export type Overview  = {
+  "@type": ["Course"]
+  courseName: Name
+  gradeLevel: SchoolGrade
+  classNumber: string
+  deskRows: number
+  deskColumns: number
+  studentCount: number
+} & IdentifiedNode
