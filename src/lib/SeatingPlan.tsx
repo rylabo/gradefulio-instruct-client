@@ -1,3 +1,4 @@
+import { NodeObject } from "jsonld"
 import { Student, StudentObj } from "./StudentObj"
 
 export interface GridSpec {
@@ -16,6 +17,12 @@ export type BlankNode = {
 
 export type IdentifiedNode = {
   '@id': string
+}
+
+export function isIdentifiedNode(node: NodeObject): node is IdentifiedNode {
+  const regex: RegExp = /^\/api\/*\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+  const idString: string = node['id'] as string
+  return idString.match(regex) !== null
 }
 
 export type DeskTemplate = {

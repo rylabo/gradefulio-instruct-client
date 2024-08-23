@@ -29,9 +29,9 @@ function Homeroom() {
     <div>
       <h1>Courses</h1>
       <ul>
-        {data.map((course: Overview) => (
+        {/* {data.map((course: Overview) => (
           <li key={course['@id']}>{course['@id']}</li>
-        ))}
+        ))} */}
       </ul>
     </div>
   );}

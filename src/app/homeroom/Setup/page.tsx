@@ -7,10 +7,11 @@ import { BlankNode, DeskLayoutTemplate, DeskTemplate, GridSpec, SeatingPlan } fr
 import DeskGridModal from './DeskGridModal';
 import { deepCopyDeskLayout, getDefaultGridSpec, initializeDeskPlan, isDeskTemplate } from '../../../util/deskLayout';
 import SeatAssignModal from './SeatAssignModal';
-import { CourseState, Name, SchoolGrade } from '../../../lib/Course';
+import { CourseTemplate, Name, SchoolGrade } from '../../../lib/Course';
 import axios from 'axios';
 
-const initialConfigState: CourseState = {
+const initialConfigState: CourseTemplate = {
+  '@type': [ 'Course' ],
   courseName: {
     key: undefined,
     en: undefined,
@@ -18,7 +19,7 @@ const initialConfigState: CourseState = {
   },
   gradeLevel: '',
   classNumber: undefined,
-  studentEnrollment: [],
+  enrollment: [],
   deskRows: 1,
   deskColumns: 1,
   deskAt: [[]]
@@ -32,14 +33,14 @@ type ClassroomConfigAction =
   | {type: 'finalize_seating_assignments', seatingPlan: SeatingPlan}
 
 
-const newClassReducer = (state: CourseState, action: ClassroomConfigAction): CourseState => {
+const newClassReducer = (state: CourseTemplate, action: ClassroomConfigAction): CourseTemplate => {
   switch (action.type) {
 
     case 'cancel_configuration':
       return initialConfigState
 
     case 'finalize_desk_layout': {
-      const newState: CourseState = {...state}
+      const newState: CourseTemplate = {...state}
       newState.deskRows = action.rows
       newState.deskRows = action.columns
       newState.deskAt = action.desks
@@ -47,7 +48,7 @@ const newClassReducer = (state: CourseState, action: ClassroomConfigAction): Cou
     }
 
     case 'finalize_student_list':{
-      const newState: CourseState = {...state}
+      const newState: CourseTemplate = {...state}
       const deskGrid: GridSpec = getDefaultGridSpec(action.newCourseInfo.newStudents)
       newState.courseName = action.newCourseInfo.courseName
       newState.gradeLevel = action.newCourseInfo.grade
@@ -56,7 +57,7 @@ const newClassReducer = (state: CourseState, action: ClassroomConfigAction): Cou
         newState.classNumber = parseInt(action.newCourseInfo.grade)
       }
 
-      newState.studentEnrollment = action.newCourseInfo.newStudents
+      newState.enrollment = action.newCourseInfo.newStudents
       newState.deskRows = deskGrid.rows
       newState.deskColumns = deskGrid.columns
       newState.deskAt = initializeDeskPlan({rows: deskGrid.rows, columns: deskGrid.columns})
@@ -64,8 +65,8 @@ const newClassReducer = (state: CourseState, action: ClassroomConfigAction): Cou
     }
 
     case 'finalize_seating_assignments':{
-      const newState: CourseState = {...state}
-      newState.studentEnrollment = action.seatingPlan.students
+      const newState: CourseTemplate = {...state}
+      newState.enrollment = action.seatingPlan.students
       newState.deskAt = action.seatingPlan.deskAt
     }
 
@@ -131,7 +132,7 @@ const seatingStateReducer = (state: SeatingPlan, action: SeatingPlanChange): Sea
 const NewCourseDialog = () => {
   const [currentDialogStep, setCurrentDialogStep] = useState<number>(0)
 
-  const [newClassState, dispatchNewClassAction] = useReducer<(state: CourseState, action: ClassroomConfigAction) => CourseState>(newClassReducer, initialConfigState)
+  const [newClassState, dispatchNewClassAction] = useReducer<(state: CourseTemplate, action: ClassroomConfigAction) => CourseTemplate>(newClassReducer, initialConfigState)
   const [seatingPlanState, dispatchSeatingPlanChange] = useReducer<(state: SeatingPlan, action: SeatingPlanChange) => SeatingPlan>(seatingStateReducer, initialSeatingPlan)
   const [detailsFinalized, setDetailsFinalized] = useState<boolean>(false)
 
@@ -184,7 +185,7 @@ const NewCourseDialog = () => {
         size='full'
         isDismissable={false}
         onNextPressed={enrollmentFinalizedHandler}
-        enrollment={newClassState.studentEnrollment as NewStudent[]}
+        enrollment={newClassState.enrollment as NewStudent[]}
         onCancel={cancelHandler}
       />
       <NewCourseDialog.DeskGridModal
@@ -193,7 +194,7 @@ const NewCourseDialog = () => {
         isDismissable={false}
         deskRows={newClassState.deskRows}
         deskColumns={newClassState.deskColumns}
-        enrollment={newClassState.studentEnrollment}
+        enrollment={newClassState.enrollment}
         desks={newClassState.deskAt}
         onBackPressed={deskGridModalPreviousHandler}
         onNextPressed={deskGridModalNextHandler}

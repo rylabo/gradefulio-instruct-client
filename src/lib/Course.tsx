@@ -52,15 +52,18 @@ export function isSchoolGrade(string: string): string is SchoolGrade {
   )
 }
 
-export interface CourseState {
+export type CourseTemplate = {
+  '@type': [ 'Course' ]
   courseName: Name
   gradeLevel: SchoolGrade
-  classNumber: number | undefined
-  studentEnrollment: Student[]
+  classNumber: number | string | undefined
+  enrollment: Student[]
   deskRows: number
   deskColumns: number
   deskAt: (DeskTemplate | {}) [][]
 }
+
+export type SchoolCourse  = CourseTemplate & IdentifiedNode
 
 /*
 {
@@ -140,7 +143,7 @@ export interface CourseState {
 */
 
 
-export type Overview  = {
+export type Overview = {
   "@type": ["Course"]
   courseName: Name
   gradeLevel: SchoolGrade

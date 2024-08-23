@@ -1,6 +1,6 @@
 import { BlankNode, IdentifiedNode, StudentReference } from "./SeatingPlan";
 
-type Name = {
+export type PersonalName = {
   annotation: string;
   nameToken: {
     en: string;
@@ -18,8 +18,8 @@ export type Student =
 export type StudentObj = {
   '@type': string[];
   attendanceNumber?: string;
-  familyNames: Name[];
-  givenNames: Name[];
+  familyNames: PersonalName[];
+  givenNames: PersonalName[];
   status?: string;
 };
 
