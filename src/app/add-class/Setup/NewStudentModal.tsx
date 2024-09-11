@@ -2,7 +2,7 @@ import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, M
 import React, { ChangeEvent, FormEvent, Key, useEffect, useReducer } from 'react'
 import { NewStudent, Student } from '../../../lib/StudentObj';
 import { read, utils } from 'xlsx';
-import { CourseState, isSchoolGrade, NameDto, SchoolGrade } from '../../../lib/Course';
+import { CourseTemplate, isSchoolGrade, NameDto, SchoolGrade } from '../../../lib/Course';
 
 interface NewStudentListItem {
   '姓'?: string
