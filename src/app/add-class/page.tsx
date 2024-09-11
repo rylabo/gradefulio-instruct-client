@@ -1,13 +1,13 @@
 'use client';
 import React, { useState, DragEvent, useReducer, useEffect } from 'react'
-import { NewStudent, sortStudents, Student, StudentObj } from '../../../lib/StudentObj';
+import { NewStudent, sortStudents, Student, StudentObj } from '../../lib/StudentObj';
 import { Button } from '@nextui-org/react';
-import NewStudentModal, { ClassEnrollmentState } from './NewStudentModal';
-import { BlankNode, DeskLayoutTemplate, DeskTemplate, GridSpec, SeatingPlan } from '../../../lib/SeatingPlan';
-import DeskGridModal from './DeskGridModal';
-import { deepCopyDeskLayout, getDefaultGridSpec, initializeDeskPlan, isDeskTemplate } from '../../../util/deskLayout';
-import SeatAssignModal from './SeatAssignModal';
-import { CourseTemplate, Name, SchoolGrade } from '../../../lib/Course';
+import NewStudentModal, { ClassEnrollmentState } from './Setup/NewStudentModal';
+import { BlankNode, DeskLayoutTemplate, DeskTemplate, GridSpec, SeatingPlan } from '../../lib/SeatingPlan';
+import DeskGridModal from './Setup/DeskGridModal';
+import { deepCopyDeskLayout, getDefaultGridSpec, getDefaultSeating, initializeDeskPlan, isDeskTemplate } from '../../util/deskLayout';
+import SeatAssignModal from './Setup/SeatAssignModal';
+import { CourseTemplate, Name, SchoolGrade } from '../../lib/Course';
 import axios from 'axios';
 
 const initialConfigState: CourseTemplate = {
@@ -76,27 +76,6 @@ const newClassReducer = (state: CourseTemplate, action: ClassroomConfigAction): 
       }
   }
 }
-
-function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]): (DeskTemplate | {})[][] {
-  let studentNumber: number = 0
-  const newSeating: (DeskTemplate | {})[][] = deepCopyDeskLayout(desks)
-  for (let j = 0; j < newSeating[0].length; j++) {
-    for (let i = 0; i < newSeating.length; i++) {
-      const obj: DeskTemplate | {} = newSeating[i][j]
-      if (isDeskTemplate(obj) && obj.assign && students[studentNumber]) {
-        obj.assignedTo = students[studentNumber]
-        obj.studentIndex = studentNumber 
-        obj.assignmentConfirmed = true
-        obj.row = i
-        obj.column = j
-        studentNumber++
-      }
-    }
-  }
-  return newSeating
-
-}
-
 
 const initialSeatingPlan: SeatingPlan = {
   students: [],

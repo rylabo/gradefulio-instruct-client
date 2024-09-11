@@ -31,7 +31,6 @@ export type DeskTemplate = {
   row: number
   column: number
   assign: boolean
-  assignmentConfirmed: boolean
 }
 
 export interface DeskLayoutTemplate {

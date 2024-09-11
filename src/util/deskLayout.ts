@@ -1,5 +1,5 @@
 import { DeskTemplate, GridSpec } from "../lib/SeatingPlan";
-import { StudentObj } from "../lib/StudentObj";
+import { Student, StudentObj } from "../lib/StudentObj";
 
 export function getDefaultGridSpec(studentList: StudentObj[]) : GridSpec {
   let spec: GridSpec = {rows: 1, columns: 1};
@@ -48,8 +48,33 @@ export function initializeDeskPlan(spec: GridSpec): DeskTemplate[][] {
   for (let i: number = 0; i < spec.rows; i++) {
     plan.push([])
     for (let j: number = 0; j < spec.columns; j++) {
-      plan[i].push({assign: true, assignmentConfirmed: false, row: i, column: j})
+      plan[i].push({
+        assign: true,
+        // assignmentConfirmed: false,
+        row: i,
+        column: j
+      })
     }
   }
   return plan
+}
+
+export function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]): (DeskTemplate | {})[][] {
+  let studentNumber: number = 0
+  const newSeating: (DeskTemplate | {})[][] = deepCopyDeskLayout(desks)
+  for (let j = 0; j < newSeating[0].length; j++) {
+    for (let i = 0; i < newSeating.length; i++) {
+      const obj: DeskTemplate | {} = newSeating[i][j]
+      if (isDeskTemplate(obj) && obj.assign && students[studentNumber]) {
+        obj.assignedTo = students[studentNumber]
+        obj.studentIndex = studentNumber 
+        // obj.assignmentConfirmed = true
+        obj.row = i
+        obj.column = j
+        studentNumber++
+      }
+    }
+  }
+  return newSeating
+
 }

@@ -17,7 +17,7 @@ function getDefaultSeating(students: Student[], desks: (DeskTemplate | {})[][]):
       if (isDeskTemplate(obj) && obj.assign && students[studentNumber]) {
         obj.assignedTo = students[studentNumber]
         obj.studentIndex = studentNumber 
-        obj.assignmentConfirmed = true
+        // obj.assignmentConfirmed = true
         studentNumber++
       }
     }

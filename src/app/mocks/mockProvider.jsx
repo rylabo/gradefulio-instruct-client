@@ -1,10 +1,5 @@
 import React from 'react'
 import MirageServerProvider from './mirageServerProvider'
-import { SchoolCourseFactory, SchoolCourseModel } from './course.mock';
-import { StudentFactory, StudentModel } from './student.mock';
-import { faker } from '@faker-js/faker/locale/ja';
-import Kuroshiro from 'kuroshiro';
-import KuromojiAnalyzer from 'kuroshiro-analyzer-kuromoji';
 
 function mockProvider({ children }) {
 
